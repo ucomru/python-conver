@@ -1,6 +1,7 @@
 # Include essential documentation files
 include README.md
 include LICENSE
+include CHANGELOG.md
 
 # Recursively include all files in the scripts folder within src/conver
 recursive-include src/conver/scripts *
