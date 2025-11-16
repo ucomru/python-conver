@@ -1,0 +1,229 @@
+#!/usr/bin/osascript -l JavaScript
+
+/*
+Author: Timur Ulyahin, https://github.com/ucomru
+License: MIT – provided "as-is" without any warranty or liability
+Copyright: (c) 2024 Timur Ulyahin
+
+USAGE:
+    osascript -l JavaScript convert.jxa \
+      '{"input": "<inputPath>", "output": "<outputPath>", "keepOpen": true | false}'
+
+RECOMMENDED PATHS:
+    Use "~/Downloads/" for both <inputPath> and <outputPath>.
+
+SETUP (macOS):
+    1. Go to System Settings > Privacy & Security > Files and Folders
+    2. Under Microsoft Word, enable access to "Downloads Folder".
+
+SUPPORTED FORMATS:
+    The script supports the following file extensions for input and output:
+    - Microsoft Word (.docx)    // Modern Word document format
+    - Word 97-2003 (.doc)       // Legacy Word document format
+    - PDF (.pdf)                // Export documents to PDF format
+    - Rich Text Format (.rtf)   // Basic document format with limited formatting
+    - OpenDocument Text (.odt)  // OpenOffice/LibreOffice document format
+    - Plain Text (.txt)         // Plain text format without any formatting
+    - HTML (.html)              // Web page format for viewing in browsers
+
+PARAMETERS:
+    - input: "<path to input file>"     // Path to the input file (required)
+    - output: "<path to output file>"   // Path to the output file (required)
+    - keepOpen: true | false            // Optional. Leave Word open after processing (default: false)
+
+STATUS SCHEMA (JSON Output):
+    The script outputs a JSON object with the following fields:
+    {
+        "status": "success" | "error",        // Execution status
+        "input": "<path to input file>",      // Path to the input file
+        "output": "<path to output file>",    // Path to the output file (null if error)
+        "message": "OK" | "<error message>",  // "OK" on success or specific error message
+        "error_code": 0 | <error code>        // 0 for success; specific code for different errors
+    }
+
+ERROR CODES:
+    0   - Success
+    1   - Incorrect JSON format or missing required fields
+    2   - Input file format is unsupported
+    3   - Output file format is unsupported
+    11  - Input file not found
+    21  - Microsoft Word did not start within the expected time
+    31  - Error saving or converting file
+*/
+
+ObjC.import("stdlib");
+const SystemEvents = Application("System Events");
+
+// Supported file formats with their corresponding codes in Word
+const formatCodes = {
+    "docx": 16,
+    "doc": 0,
+    "pdf": 17,
+    "rtf": 6,
+    "odt": 19,
+    "txt": 7,
+    "html": 8
+};
+
+// Retrieve the format code based on file extension, if supported
+function getFormatCodeByExtension(extension) {
+    const ext = extension.toLowerCase();
+    return ext in formatCodes ? formatCodes[ext] : null;
+}
+
+function run(argv) {
+    // Ensure there is only one JSON argument passed to the script
+    if (argv.length !== 1) {
+        console.log(JSON.stringify({
+            "status": "error",
+            "input": null,
+            "output": null,
+            "message": "A single JSON argument is required.",
+            "error_code": 1
+        }));
+        $.exit(1);
+    }
+
+    let params;
+    // Attempt to parse the JSON input
+    try {
+        params = JSON.parse(argv[0]);
+    } catch (error) {
+        console.log(JSON.stringify({
+            "status": "error",
+            "input": null,
+            "output": null,
+            "message": "Invalid JSON format.",
+            "error_code": 1
+        }));
+        $.exit(1);
+    }
+
+    const inputPath = params.input;
+    let outputPath = params.output;
+    const keepOpen = params.keepOpen === true;  // Flag to optionally keep Word open
+
+    // Validate the presence of required fields
+    if (!inputPath || !outputPath) {
+        console.log(JSON.stringify({
+            "status": "error",
+            "input": inputPath || null,
+            "output": outputPath || null,
+            "message": "Both 'input' and 'output' fields are required in JSON.",
+            "error_code": 1
+        }));
+        $.exit(1);
+    }
+
+    // Check if input file format is supported
+    const inputExtension = inputPath.split('.').pop().toLowerCase();
+    const inputFormat = getFormatCodeByExtension(inputExtension);
+
+    if (inputFormat === null) {
+        console.log(JSON.stringify({
+            "status": "error",
+            "input": inputPath,
+            "output": null,
+            "message": `The input file format "${inputExtension}" is unsupported.`,
+            "error_code": 2
+        }));
+        $.exit(2);
+    }
+
+    // Check if output file format is supported
+    const outputExtension = outputPath.split('.').pop().toLowerCase();
+    const outputFormat = getFormatCodeByExtension(outputExtension);
+
+    if (outputFormat === null) {
+        console.log(JSON.stringify({
+            "status": "error",
+            "input": inputPath,
+            "output": outputPath,
+            "message": `The output file format "${outputExtension}" is unsupported.`,
+            "error_code": 3
+        }));
+        $.exit(3);
+    }
+
+    const Word = Application("Microsoft Word");
+    Word.includeStandardAdditions = true;
+
+    let wordStartedByScript = false;  // Flag to track if Word was started by this script
+
+    try {
+        // Check if the input file exists
+        const fileManager = $.NSFileManager.defaultManager;
+        if (!fileManager.fileExistsAtPath($(inputPath))) {
+            console.log(JSON.stringify({
+                "status": "error",
+                "input": inputPath,
+                "output": null,
+                "message": `File "${inputPath}" not found.`,
+                "error_code": 11
+            }));
+            $.exit(11);
+        }
+
+        // Activate or launch Word if not already running
+        if (!Word.running()) {
+            Word.activate();
+            wordStartedByScript = true;  // Mark that Word was launched by this script
+
+            let attempt = 0;
+            // Wait for Word to start, with a maximum number of attempts
+            while (!Word.running() && attempt < 10) {
+                delay(0.1);
+                attempt++;
+            }
+
+            // Check if Word started successfully
+            if (Word.running()) {
+                SystemEvents.processes["Microsoft Word"].visible = false;
+            } else {
+                console.log(JSON.stringify({
+                    "status": "error",
+                    "input": inputPath,
+                    "output": outputPath,
+                    "message": "Microsoft Word did not start within the expected time.",
+                    "error_code": 21
+                }));
+                $.exit(21);
+            }
+        } else {
+            Word.launch();
+            SystemEvents.processes["Microsoft Word"].visible = false;
+        }
+
+        // Open the document and save it in the desired format
+        Word.open(inputPath);
+        const doc = Word.documents[0];
+        doc.saveAs({
+            fileName: outputPath,
+            fileFormat: outputFormat
+        });
+        doc.close({ saving: "no" });  // Close the document without saving any changes
+    } catch (error) {
+        console.log(JSON.stringify({
+            "status": "error",
+            "input": inputPath,
+            "output": outputPath,
+            "message": error.toString(),
+            "error_code": 31
+        }));
+        $.exit(31);
+    }
+
+    // Output success message in JSON format
+    console.log(JSON.stringify({
+        "status": "success",
+        "input": inputPath,
+        "output": outputPath,
+        "message": "OK",
+        "error_code": 0
+    }));
+
+    // Close Word if it was started by this script and keepOpen is false
+    if (wordStartedByScript && !keepOpen) {
+        Word.quit();
+    }
+}

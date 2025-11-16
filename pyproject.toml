@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "conver"
+dynamic = ["version"]
+dependencies = ["click"]
+requires-python = ">=3.9"
+authors = [{ name="Timur Ulyahin", email="ucomru@pm.me" }]
+description = "A cross-platform Word document converter."
+readme = "README.md"
+license = { text = "MIT" }
+keywords = ["conversion", "documents", "office", "tools", "cli"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+]
+
+[project.urls]
+Homepage = "https://github.com/ucomru/python-conver"
+Repository = "https://github.com/ucomru/python-conver"
+Documentation = "https://github.com/ucomru/python-conver"
+Issues = "https://github.com/ucomru/python-conver/issues"
+
+[project.scripts]
+conver = "conver.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+conver = ["scripts/*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "conver.__version__" }
+
+[tool.ruff]
+exclude = []
+line-length = 88

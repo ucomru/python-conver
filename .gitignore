@@ -1,0 +1,19 @@
+# Environments
+.env
+.venv/
+.venv.bak/
+
+# Local
+.DS_Store
+__MACOSX/
+__WORK/
+
+# Distribution
+*.pyc
+dist/
+build/
+*.egg-info/
+__pycache__/
+
+# Sphinx documentation
+docs/_build/
