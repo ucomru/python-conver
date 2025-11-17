@@ -1,5 +1,16 @@
 # Conver Changelog
 
+## [0.1.1] - 2024-11-17
+
+### Added
+- CLI: automatic output directory inference when `--output` is omitted:
+  - If all input files share the same parent directory, outputs are written there.
+  - If inputs originate from different directories, the CLI now requires `--output DIRECTORY`.
+
+### Improved
+- Updated README with new batch-mode output behavior.
+- Added clearer error message for ambiguous multi-directory inputs.
+
 ## [0.1.0] - 2024-11-16
 
 ### Added

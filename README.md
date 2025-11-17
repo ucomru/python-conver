@@ -28,6 +28,8 @@ with `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.odt`.
 - Filename-only outputs automatically placed next to the input file
 - Safe low-level IPC layer between Python and native automation scripts
 
+---
+
 ## Installation
 
 ### Using pip
@@ -45,15 +47,11 @@ This isolates the package in its own virtual environment and avoids polluting yo
 pipx install --upgrade conver
 ```
 
-After installation:
+After installation will be available globally:
 
 ```bash
 conver --help
 ```
-
-will be available globally.
-
----
 
 ### Requirements
 
@@ -73,11 +71,7 @@ from conver import conver
 conver("document.docx", "document.pdf")
 ```
 
-Returns:
-
-```python
-Path("/absolute/path/document.pdf")
-```
+Returns: `Path("/absolute/path/document.pdf")`
 
 ### Filename-only output
 
@@ -85,11 +79,7 @@ Path("/absolute/path/document.pdf")
 conver("/Users/me/docs/a.docx", "a.pdf")
 ```
 
-Automatically produces:
-
-```bash
-/Users/me/docs/a.pdf
-```
+Automatically produces: `/Users/me/docs/a.pdf`
 
 ### Error handling example
 
@@ -110,26 +100,27 @@ except UnsupportedFormat:
 
 High-level document conversion API.
 
-#### Signature
+*Signature*:
 
-conver(input_path, output_path, keep_open=False) → pathlib.Path
+```python
+conver(input_path, output_path, keep_open=False) -> pathlib.Path
+```
 
-#### Parameters
+*Parameters*:
 
-- **input_path** — `str | Path`  
+- `input_path: str | Path`  
   Path to the source document.
-
-- **output_path** — `str | Path`  
+- `output_path: str | Path`  
   Output filename or full path.
-
-- **keep_open** — `bool`  
+- `keep_open: bool`  
   Leave Microsoft Word running after conversion.
 
-#### Returns
+*Returns*:
 
-- **pathlib.Path** — absolute path of the generated output file.
+- `pathlib.Path`  
+  Absolute path of the generated output file.
 
-#### Raises
+*Raises*:
 
 - `InputFileNotFound`
 - `UnsupportedFormat`
@@ -144,13 +135,13 @@ conver(input_path, output_path, keep_open=False) → pathlib.Path
 
 The CLI supports two modes: direct output path, or format flags.
 
-### 1. Explicit input/output
+### Explicit input/output
 
 ```bash
 conver input.docx output.pdf
 ```
 
-### 2. Format flags (output placed next to input)
+### Format flags (output placed next to input)
 
 ```bash
 conver input.docx --pdf
@@ -213,8 +204,6 @@ Examples:
     For single input: output filename.  
     For multiple inputs: must be a directory.
 
----
-
 ### Multiple Inputs (Batch Mode)
 
 The CLI can process multiple input files at once:
@@ -224,7 +213,7 @@ conver *.docx -o outdir
 conver file1.docx file2.docx file3.docx -o converted/
 ```
 
-Rules:
+*Rules*:
 
 - When multiple inputs are provided, `--output` **must** point to a directory.
 - If the directory does not exist, it will be created automatically.
@@ -232,11 +221,19 @@ Rules:
 - Format flags (`--pdf`, `--rtf`, etc.) **cannot be used together with** `--output FILE`.
 - Globbing (`*.docx`) is expanded by your shell before reaching the CLI.
 
-Output filenames follow the pattern:
 
+If multiple input files are provided and `--output` is **not** specified,
+the CLI automatically attempts to infer a common parent directory for all inputs.
+If all files reside in the same directory, that directory becomes the output location.
+
+Example:
+```bash
+conver *.docx
+# -> writes output next to each input file
 ```
-input.docx  ->  outdir/input.pdf
-```
+
+If the input files come from **different** directories, the output directory becomes ambiguous
+and the CLI will require an explicit `--output`.
 
 ### Shell Globbing
 

@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import Union
 
 from click import (
     command,
@@ -18,6 +19,11 @@ from .__version__ import __version__
 def fail(label: str, err: Exception, code: int = 1):
     echo(f"{label} {err}", err=True)
     sys.exit(code)
+
+
+def _infer_common_parent(paths: list[Path]) -> Union[Path, None]:
+    parents = {p.resolve().parent for p in paths}
+    return parents.pop() if len(parents) == 1 else None
 
 
 @command(help="Convert Word documents.")
@@ -50,7 +56,14 @@ def cli(inputs, output, target, keep_open):
     # --- MULTIPLE INPUTS ---
     if len(inputs) > 1:
         if output is None:
-            raise UsageError("Multiple inputs require --output DIRECTORY.")
+            output = _infer_common_parent(inputs)
+
+        if output is None:
+            raise UsageError(
+                "Input files are in different directories; specify --output DIRECTORY."
+            )
+
+        output = output.resolve()
 
         if output.exists() and not output.is_dir():
             raise UsageError("--output must be a directory for multiple inputs.")
