@@ -4,7 +4,8 @@ License: MIT – provided "as-is" without any warranty or liability
 Copyright: (c) 2024 Timur Ulyahin
 
 USAGE:
-    powershell -ExecutionPolicy Bypass -File convert.ps1 -jsonArgs "{\"input\": \"<inputPath>\", \"output\": \"<outputPath>\", \"keepOpen\": true | false}"
+    powershell -ExecutionPolicy Bypass -File convert.ps1 -jsonArgs `
+        "{\"input\": \"<inputPath>\", \"output\": \"<outputPath>\", \"keepOpen\": true | false}"
 
 RECOMMENDED PATHS:
     Use paths like "C:\Users\UserName\Downloads\" for both <inputPath> and <outputPath>.
@@ -26,7 +27,7 @@ SUPPORTED FORMATS:
 PARAMETERS:
     - input: "<path to input file>"     # Path to the input file (required)
     - output: "<path to output file>"   # Path to the output file (required)
-    - keepOpen: true | false            # Optional. Leave Word open after processing (default: false)
+    - keepOpen: true | false            # Optional. Keep Word open (default: false)
 
 STATUS SCHEMA (JSON Output):
     The script outputs a JSON object with the following fields:

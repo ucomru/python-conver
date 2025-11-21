@@ -29,7 +29,7 @@ SUPPORTED FORMATS:
 PARAMETERS:
     - input: "<path to input file>"     // Path to the input file (required)
     - output: "<path to output file>"   // Path to the output file (required)
-    - keepOpen: true | false            // Optional. Leave Word open after processing (default: false)
+    - keepOpen: true | false            // Optional. Keep Word open (default: false)
 
 STATUS SCHEMA (JSON Output):
     The script outputs a JSON object with the following fields:
@@ -38,7 +38,7 @@ STATUS SCHEMA (JSON Output):
         "input": "<path to input file>",      // Path to the input file
         "output": "<path to output file>",    // Path to the output file (null if error)
         "message": "OK" | "<error message>",  // "OK" on success or specific error message
-        "error_code": 0 | <error code>        // 0 for success; specific code for different errors
+        "error_code": 0 | <error code>        // 0 for success; other code for specific errors
     }
 
 ERROR CODES:
@@ -148,8 +148,6 @@ function run(argv) {
     const Word = Application("Microsoft Word");
     Word.includeStandardAdditions = true;
 
-    let wordStartedByScript = false;  // Flag to track if Word was started by this script
-
     try {
         // Check if the input file exists
         const fileManager = $.NSFileManager.defaultManager;
@@ -167,10 +165,9 @@ function run(argv) {
         // Activate or launch Word if not already running
         if (!Word.running()) {
             Word.activate();
-            wordStartedByScript = true;  // Mark that Word was launched by this script
 
+            // Wait for Word to start
             let attempt = 0;
-            // Wait for Word to start, with a maximum number of attempts
             while (!Word.running() && attempt < 10) {
                 delay(0.1);
                 attempt++;
@@ -222,8 +219,8 @@ function run(argv) {
         "error_code": 0
     }));
 
-    // Close Word if it was started by this script and keepOpen is false
-    if (wordStartedByScript && !keepOpen) {
+    // Close Word unless keepOpen is explicitly set to true
+    if (!keepOpen) {
         Word.quit();
     }
 }
