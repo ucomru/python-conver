@@ -1,5 +1,15 @@
 # Conver Changelog
 
+## [0.1.3] - 2025-11-22
+
+### Improved
+- CLI: updated short-flag layout for all formats; resolved conflicts with `-h`, `-o`, and `-d`.
+  Introduced new short flags: `-x` (DOCX), `-d` (DOC), `-m` (HTML), `-u` (ODT).
+
+### Changed
+- CLI: restored `-h` as the standard help flag; switched version flag to `-v`.
+  Added `help_option_names` for consistent `-h/--help` behavior.
+
 ## [0.1.2] - 2025-11-22
 
 ### Added
