@@ -52,18 +52,13 @@ def cli(inputs, output, target, keep_open):
     if not inputs:
         raise UsageError("No input files specified.")
 
-    if output is not None and target is not None:
-        raise UsageError("Cannot use both --output and format flags together.")
-
     # --- MULTIPLE INPUTS ---
     if len(inputs) > 1:
         if output is None:
             output = _infer_common_parent(inputs)
 
         if output is None:
-            raise UsageError(
-                "Input files are in different directories; specify --output DIRECTORY."
-            )
+            raise UsageError("In batch mode, --output DIRECTORY is required.")
 
         output = output.resolve()
 
@@ -88,18 +83,29 @@ def cli(inputs, output, target, keep_open):
         inp = inputs[0]
 
         if output is not None:
-            try:
-                result = conver(inp, output, keep_open=keep_open)
-                echo(result)
-            except ConverError as err:
-                fail("Error:", err, err.error_code or 1)
+            output = output.resolve()
+
+            if output.suffix:
+                if target is not None:
+                    raise UsageError(
+                        "Cannot use format flag when output is a file path."
+                    )
+                out_file = output
+            else:
+                if target is None:
+                    target = "pdf"
+
+                output.mkdir(parents=True, exist_ok=True)
+                out_file = output / (inp.stem + f".{target}")
+
         else:
             if target is None:
                 target = "pdf"
 
             out_file = inp.with_suffix("." + target)
-            try:
-                result = conver(inp, out_file, keep_open=keep_open)
-                echo(result)
-            except ConverError as err:
-                fail("Error:", err, err.error_code or 1)
+
+        try:
+            result = conver(inp, out_file, keep_open=keep_open)
+            echo(result)
+        except ConverError as err:
+            fail("Error:", err, err.error_code or 1)
