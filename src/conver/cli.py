@@ -70,10 +70,14 @@ def cli(inputs, output, target, keep_open):
         if target is None:
             target = "pdf"
 
-        for inp in inputs:
+        for idx, inp in enumerate(inputs):
+            # Keep Word open for all but the last file
+            effective_keep_open = (idx < len(inputs) - 1) or keep_open
+
             out_file = output / (inp.stem + f".{target}")
+
             try:
-                result = conver(inp, out_file, keep_open=keep_open)
+                result = conver(inp, out_file, keep_open=effective_keep_open)
                 echo(result)
             except ConverError as err:
                 fail("Error:", err, err.error_code or 1)
