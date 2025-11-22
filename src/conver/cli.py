@@ -26,7 +26,7 @@ def _infer_common_parent(paths: list[Path]) -> Union[Path, None]:
     return parents.pop() if len(parents) == 1 else None
 
 
-@command(help="Convert Word documents.")
+@command(context_settings={"help_option_names": ["-h", "--help"]})
 @argument(
     "inputs", type=ClickPath(exists=True, path_type=Path), nargs=-1, metavar="INPUT..."
 )
@@ -39,14 +39,14 @@ def _infer_common_parent(paths: list[Path]) -> Union[Path, None]:
     help="Output file or directory (for multiple inputs).",
 )
 @option("-p", "--pdf", "target", flag_value="pdf", help="Convert to PDF.")
-@option("-d", "--docx", "target", flag_value="docx", help="Convert to DOCX.")
-@option("--doc", "target", flag_value="doc", help="Convert to DOC.")
+@option("-x", "--docx", "target", flag_value="docx", help="Convert to DOCX.")
+@option("-d", "--doc", "target", flag_value="doc", help="Convert to DOC.")
 @option("-r", "--rtf", "target", flag_value="rtf", help="Convert to RTF.")
-@option("--odt", "target", flag_value="odt", help="Convert to ODT.")
 @option("-t", "--txt", "target", flag_value="txt", help="Convert to TXT.")
-@option("-h", "--html", "target", flag_value="html", help="Convert to HTML.")
+@option("-m", "--html", "target", flag_value="html", help="Convert to HTML.")
+@option("-u", "--odt", "target", flag_value="odt", help="Convert to ODT.")
 @option("-k", "--keep-open", is_flag=True, help="Keep Microsoft Word open.")
-@version_option(__version__, "-V", "--version")
+@version_option(__version__, "-v", "--version")
 def cli(inputs, output, target, keep_open):
     """Main CLI entry point."""
     if not inputs:
