@@ -3,17 +3,19 @@ from pathlib import Path
 from typing import Union
 
 from click import (
-    command,
+    Path as ClickPath,
+)
+from click import (
+    UsageError,
     argument,
+    command,
+    echo,
     option,
     version_option,
-    echo,
-    Path as ClickPath,
-    UsageError,
 )
 
-from .conver import conver, ConverError
 from .__version__ import __version__
+from .conver import ConverError, conver
 
 
 def fail(label: str, err: Exception, code: int = 1):
@@ -36,19 +38,19 @@ def _infer_common_parent(paths: list[Path]) -> Union[Path, None]:
     "output",
     type=ClickPath(path_type=Path),
     required=False,
-    help="Output file or directory (for multiple inputs).",
+    help="Output file or directory.",
 )
-@option("-p", "--pdf", "target", flag_value="pdf", help="Convert to PDF.")
-@option("-x", "--docx", "target", flag_value="docx", help="Convert to DOCX.")
-@option("-d", "--doc", "target", flag_value="doc", help="Convert to DOC.")
-@option("-r", "--rtf", "target", flag_value="rtf", help="Convert to RTF.")
-@option("-t", "--txt", "target", flag_value="txt", help="Convert to TXT.")
-@option("-m", "--html", "target", flag_value="html", help="Convert to HTML.")
-@option("-u", "--odt", "target", flag_value="odt", help="Convert to ODT.")
-@option("-k", "--keep-open", is_flag=True, help="Keep Microsoft Word open.")
+@option("-p", "--pdf", "target", flag_value="pdf", help="Convert to PDF [DEFAULT]")
+@option("-x", "--docx", "target", flag_value="docx", help="Convert to DOCX")
+@option("-d", "--doc", "target", flag_value="doc", help="Convert to DOC")
+@option("-r", "--rtf", "target", flag_value="rtf", help="Convert to RTF")
+@option("-t", "--txt", "target", flag_value="txt", help="Convert to TXT")
+@option("-m", "--html", "target", flag_value="html", help="Convert to HTML")
+@option("-u", "--odt", "target", flag_value="odt", help="Convert to ODT")
+@option("-k", "--keep-open", is_flag=True, help="Keep Microsoft Word open")
 @version_option(__version__, "-v", "--version")
 def cli(inputs, output, target, keep_open):
-    """Main CLI entry point."""
+    """Convert documents using Microsoft Word."""
     if not inputs:
         raise UsageError("No input files specified.")
 
