@@ -1,5 +1,24 @@
 # Conver Changelog
 
+## [0.1.4] - 2026-11-06
+
+### Added
+- CLI: automatic skipping of Microsoft Word temporary files
+  (`~$*.doc`, `~$*.docx`, `~$*.rtf`, `~$*.odt`).
+- Added `--include-temp` flag to disable temporary file filtering.
+
+### Fixed
+- Path normalization: filenames starting with `~` are no longer incorrectly interpreted
+  as home-directory paths. Home expansion is now limited to `~` and `~/...`.
+
+### Changed
+- Raised minimum supported Python version from 3.9 to 3.12.
+
+### Improved
+- Updated type annotations across CLI, API, and IPC layers for stricter static type checking.
+- Refined subprocess handling and JSON response typing.
+- Updated README and cleaned up module documentation.
+
 ## [0.1.3] - 2025-11-22
 
 ### Improved
