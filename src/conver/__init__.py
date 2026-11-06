@@ -1,25 +1,25 @@
-"""
-Convenient public API for the conver package.
-"""
+"""Public API for document conversion using Microsoft Word."""
 
-from .conver import conver
-from .conver import ConverError
-from .conver import InputFileNotFound
-from .conver import UnsupportedFormat
-from .conver import WordStartError
-from .conver import SaveError
-from .conver import IPCError
-from .conver import PlatformNotSupported
 from .__version__ import __version__
+from .conver import (
+    ConverError,
+    InputFileNotFound,
+    IPCError,
+    PlatformNotSupported,
+    SaveError,
+    UnsupportedFormat,
+    WordStartError,
+    conver,
+)
 
 __all__ = [
-    "conver",
     "ConverError",
+    "IPCError",
     "InputFileNotFound",
+    "PlatformNotSupported",
+    "SaveError",
     "UnsupportedFormat",
     "WordStartError",
-    "SaveError",
-    "IPCError",
-    "PlatformNotSupported",
     "__version__",
+    "conver",
 ]

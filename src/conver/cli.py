@@ -1,6 +1,6 @@
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Union
 
 from click import (
     Path as ClickPath,
@@ -17,13 +17,19 @@ from click import (
 from .__version__ import __version__
 from .conver import ConverError, conver
 
+WORD_TEMP_EXTENSIONS = frozenset({".doc", ".docx", ".rtf", ".odt"})
+
 
 def fail(label: str, err: Exception, code: int = 1):
     echo(f"{label} {err}", err=True)
     sys.exit(code)
 
 
-def _infer_common_parent(paths: list[Path]) -> Union[Path, None]:
+def is_word_temp_file(path: Path) -> bool:
+    return path.name.startswith("~$") and path.suffix.lower() in WORD_TEMP_EXTENSIONS
+
+
+def _infer_common_parent(paths: Iterable[Path]) -> Path | None:
     parents = {p.resolve().parent for p in paths}
     return parents.pop() if len(parents) == 1 else None
 
@@ -37,7 +43,6 @@ def _infer_common_parent(paths: list[Path]) -> Union[Path, None]:
     "--output",
     "output",
     type=ClickPath(path_type=Path),
-    required=False,
     help="Output file or directory.",
 )
 @option("-p", "--pdf", "target", flag_value="pdf", help="Convert to PDF [DEFAULT]")
@@ -48,9 +53,19 @@ def _infer_common_parent(paths: list[Path]) -> Union[Path, None]:
 @option("-m", "--html", "target", flag_value="html", help="Convert to HTML")
 @option("-u", "--odt", "target", flag_value="odt", help="Convert to ODT")
 @option("-k", "--keep-open", is_flag=True, help="Keep Microsoft Word open")
+@option("--include-temp", is_flag=True, help="Include MS Word temp files: ~$...")
 @version_option(__version__, "-v", "--version")
-def cli(inputs, output, target, keep_open):
+def cli(
+    inputs: tuple[Path, ...],
+    output: Path | None,
+    target: str | None,
+    keep_open: bool,
+    include_temp: bool,
+) -> None:
     """Convert documents using Microsoft Word."""
+    if not include_temp:
+        inputs = tuple(inp for inp in inputs if not is_word_temp_file(inp))
+
     if not inputs:
         raise UsageError("No input files specified.")
 
@@ -85,7 +100,7 @@ def cli(inputs, output, target, keep_open):
                 fail("Error:", err, err.error_code or 1)
 
     # --- SINGLE INPUT ---
-    else:
+    elif len(inputs) == 1:
         inp = inputs[0]
 
         if output is not None:

@@ -14,14 +14,15 @@ Successful conversion returns the resolved output path as a `Path` object.
 Errors are represented as subclasses of `ConverError`.
 """
 
-from typing import Union, Tuple
 from pathlib import Path
 
 from ._convert import convert
 
 
 class ConverError(Exception):
-    def __init__(self, message, error_code=None):
+    error_code: int | None
+
+    def __init__(self, message: str, error_code: int | None = None) -> None:
         super().__init__(message)
         self.error_code = error_code
 
@@ -62,10 +63,15 @@ _ERROR_MAP = {
 }
 
 
+def _expanduser(path: str | Path) -> Path:
+    path = Path(path)
+    return path.expanduser() if path.parts and path.parts[0] == "~" else path
+
+
 def _normalize_paths(
-    input_path: Union[str, Path],
-    output_path: Union[str, Path],
-) -> Tuple[Path, Path]:
+    input_path: str | Path,
+    output_path: str | Path,
+) -> tuple[Path, Path]:
     """
     Normalize and resolve input/output paths.
 
@@ -79,10 +85,10 @@ def _normalize_paths(
     """
 
     # Normalize input
-    in_path = Path(input_path).expanduser().absolute()
+    in_path = _expanduser(input_path).absolute()
 
     # Normalize output raw
-    out_raw = Path(output_path).expanduser()
+    out_raw = _expanduser(output_path)
 
     # filename-only -> drop into input directory
     if out_raw.parent == Path("."):
@@ -96,8 +102,8 @@ def _normalize_paths(
 
 
 def conver(
-    input_path: Union[str, Path],
-    output_path: Union[str, Path],
+    input_path: str | Path,
+    output_path: str | Path,
     keep_open: bool = False,
 ) -> Path:
     """

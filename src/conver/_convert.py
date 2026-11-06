@@ -62,16 +62,16 @@ ERROR CODES:
 """
 
 import subprocess
-from json import loads, dumps, JSONDecodeError
 import sys
-from importlib.resources import files, as_file
-from typing import TypedDict, Optional, List
+from importlib.resources import as_file, files
+from json import JSONDecodeError, dumps, loads
+from typing import TypedDict, cast
 
 
 class ConvertResult(TypedDict):
     status: str
-    input: Optional[str]
-    output: Optional[str]
+    input: str | None
+    output: str | None
     message: str
     error_code: int
 
@@ -149,7 +149,7 @@ def _run_windows_script(
 
 
 def _execute_command(
-    command: List[str], input_path: str, output_path: str
+    command: list[str], input_path: str, output_path: str
 ) -> ConvertResult:
     """
     Executes the command for either macOS or Windows and parses the JSON output.
@@ -167,13 +167,13 @@ def _execute_command(
     Returns:
         ConvertResult: A structured dictionary with status, message, error code, input, and output.
     """
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
 
     # osascript places all output in stderr, including success
     raw = result.stdout.strip() or result.stderr.strip()
 
     try:
-        data = loads(raw)
+        data = cast(ConvertResult, loads(raw))
     except JSONDecodeError:
         return {
             "status": "error",

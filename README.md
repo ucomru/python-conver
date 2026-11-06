@@ -47,7 +47,7 @@ This isolates the package in its own virtual environment and avoids polluting yo
 pipx install --upgrade conver
 ```
 
-After installation will be available globally:
+After installation it will be available globally:
 
 ```bash
 conver --help
@@ -55,7 +55,7 @@ conver --help
 
 ### Requirements
 
-- Python **3.9+**  
+- Python **3.12+**  
 - Microsoft Word must be installed on the system  
 - macOS (JXA) or Windows (PowerShell + Word COM automation)  
 
@@ -246,6 +246,10 @@ conver path/*.rtf --pdf
 ```
 
 This means the CLI receives the expanded list of files as separate arguments.
+
+By default, the CLI skips Microsoft Word temporary files
+(`~$*.doc`, `~$*.docx`, `~$*.rtf`, `~$*.odt`).
+Use `--include-temp` to disable this filter.
 
 ### Format-Flag Restrictions
 
