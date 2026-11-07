@@ -17,7 +17,7 @@ from click import (
 from .__version__ import __version__
 from .conver import ConverError, conver
 
-WORD_EXTENSIONS = frozenset({"docx", "doc", "rtf", "txt", "html", "odt"})
+WORD_EXTENSIONS = frozenset({".docx", ".doc", ".rtf", ".txt", ".html", ".odt"})
 
 
 def fail(label: str, err: Exception, code: int = 1):
