@@ -194,7 +194,7 @@ function run(argv) {
         }
 
         // Open the document and save it in the desired format
-        Word.open(inputPath);
+        Word.open(Path(inputPath));
         doc = Word.activeDocument;
         doc.saveAs({
             fileName: outputPath,
