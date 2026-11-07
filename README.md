@@ -139,7 +139,7 @@ The CLI supports two modes: direct output path, or format flags.
 ### Explicit input/output
 
 ```bash
-conver input.docx output.pdf
+conver input.docx -o output.pdf
 ```
 
 ### Format flags (output placed next to input)
@@ -198,21 +198,21 @@ conver *.docx -q
 
 ```
 Usage:
-    conver <input> <output>
-    conver <input> [--pdf | --docx | --rtf | --txt | --html] [--keep-open] [--quiet]
+    conver INPUT... [-o OUTPUT] [--pdf --docx --rtf --txt --html --odt --doc] [--keep-open] [--quiet]
 
 Examples:
-    conver a.docx a.pdf
+    conver a.docx -o a.pdf
     conver a.docx --pdf
     conver /path/to/file.doc --html
+    conver *.docx -o converted/
 ```
 
 ### CLI Arguments
 
-`input`  
+`INPUT`  
     One or more input files. Patterns like `*.docx` are expanded by the shell.
 
-`output`  
+`-o [--output] OUTPUT`  
     Optional.  
     For single input: output filename.  
     For multiple inputs: must be a directory.
@@ -261,19 +261,20 @@ conver path/*.rtf --pdf
 This means the CLI receives the expanded list of files as separate arguments.
 
 By default, the CLI skips Microsoft Word temporary files
-(`~$*.doc`, `~$*.docx`, `~$*.rtf`, `~$*.odt`).
+(`~$*.docx`, `~$*.doc`, `~$*.rtf`, `~$*.txt`, `~$*.html`, `~$*.odt`).
+
 Use `--include-temp` to disable this filter.
 
 ### Format-Flag Restrictions
 
-Format-selection flags: `--pdf`, `--docx`, `--rtf`, `--txt`, `--html`
+Format-selection flags: `--pdf`, `--docx`, `--doc`, `--rtf`, `--txt`, `--html`, `--odt`
 
 Work **only when OUTPUT is omitted**, i.e.:
 
 *Allowed*:  
 ```bash
 conver input.docx --pdf
-conver input.docx output.pdf
+conver input.docx -o output.pdf
 ```
 
 *Invalid*:  
@@ -287,9 +288,9 @@ conver input.docx output.pdf --pdf
 
 Conversion capabilities depend on Microsoft Word.
 
-Input formats: `.docx`, `.doc`, `.pdf`, `.rtf`, `.odt`, `.txt`, `.html`
+Input formats: `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.odt`
 
-Output formats: `.pdf`, `.docx`, `.doc`, `.pdf`, `.rtf`, `.odt`, `.txt`, `.html`
+Output formats: `.pdf`, `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.odt`
 
 ---
 
