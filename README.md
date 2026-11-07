@@ -24,6 +24,7 @@ with `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.odt`.
 - Uses the actual Microsoft Word engine
 - Clean, minimal Python API
 - CLI with direct input/output or format-selection flags
+- Optional quiet mode for scripting and batch conversion
 - Structured error handling via custom exceptions
 - Filename-only outputs automatically placed next to the input file
 - Safe low-level IPC layer between Python and native automation scripts
@@ -181,12 +182,24 @@ the default output format is **PDF**:
 conver input.docx # -> input.pdf
 ```
 
+### Quiet Mode
+
+By default, the CLI prints the output path after each successful conversion.
+
+Use `-q` or `--quiet` to suppress success output. Error messages
+are still displayed, and failures return a non-zero exit code.
+
+```bash
+conver input.docx --pdf --quiet
+conver *.docx -q
+```
+
 ### CLI Syntax
 
 ```
 Usage:
     conver <input> <output>
-    conver <input> [--pdf | --docx | --rtf | --txt | --html] [--keep-open]
+    conver <input> [--pdf | --docx | --rtf | --txt | --html] [--keep-open] [--quiet]
 
 Examples:
     conver a.docx a.pdf

@@ -1,5 +1,13 @@
 # Conver Changelog
 
+## [0.1.5] - 2026-11-07
+
+### Added
+- CLI: added `-q` / `--quiet` option to suppress successful conversion output
+  while preserving error messages. [b123440]
+- Added PEP 561 `py.typed` marker to distribute inline type annotations
+  for static type checkers. [df2e11a]
+
 ## [0.1.4] - 2026-11-06
 
 ### Added
