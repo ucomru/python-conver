@@ -17,7 +17,7 @@ from click import (
 from .__version__ import __version__
 from .conver import ConverError, conver
 
-WORD_TEMP_EXTENSIONS = frozenset({".doc", ".docx", ".rtf", ".odt"})
+WORD_EXTENSIONS = frozenset({"docx", "doc", "rtf", "txt", "html", "odt"})
 
 
 def fail(label: str, err: Exception, code: int = 1):
@@ -26,7 +26,7 @@ def fail(label: str, err: Exception, code: int = 1):
 
 
 def is_word_temp_file(path: Path) -> bool:
-    return path.name.startswith("~$") and path.suffix.lower() in WORD_TEMP_EXTENSIONS
+    return path.name.startswith("~$") and path.suffix.lower() in WORD_EXTENSIONS
 
 
 def _infer_common_parent(paths: Iterable[Path]) -> Path | None:
@@ -53,6 +53,7 @@ def _infer_common_parent(paths: Iterable[Path]) -> Path | None:
 @option("-m", "--html", "target", flag_value="html", help="Convert to HTML")
 @option("-u", "--odt", "target", flag_value="odt", help="Convert to ODT")
 @option("-k", "--keep-open", is_flag=True, help="Keep Microsoft Word open")
+@option("-q", "--quiet", is_flag=True, help="Suppress output on success")
 @option("--include-temp", is_flag=True, help="Include MS Word temp files: ~$...")
 @version_option(__version__, "-v", "--version")
 def cli(
@@ -60,6 +61,7 @@ def cli(
     output: Path | None,
     target: str | None,
     keep_open: bool,
+    quiet: bool,
     include_temp: bool,
 ) -> None:
     """Convert documents using Microsoft Word."""
@@ -95,7 +97,9 @@ def cli(
 
             try:
                 result = conver(inp, out_file, keep_open=effective_keep_open)
-                echo(result)
+
+                if not quiet:
+                    echo(result)
             except ConverError as err:
                 fail("Error:", err, err.error_code or 1)
 
@@ -127,6 +131,8 @@ def cli(
 
         try:
             result = conver(inp, out_file, keep_open=keep_open)
-            echo(result)
+
+            if not quiet:
+                echo(result)
         except ConverError as err:
             fail("Error:", err, err.error_code or 1)
