@@ -1,5 +1,19 @@
 # Conver Changelog
 
+## [0.1.6] - 2026-11-07
+
+### Fixed
+- CLI: fixed Microsoft Word temporary file filtering by correcting extension matching
+  (missing leading dots). [a2fe1f5]
+- Windows: fixed DOC input format validation by checking for null instead
+  of treating format code `0` as invalid. [3aa808a]
+- macOS: improved Word cleanup on conversion errors while preserving efficient
+  batch conversion and automatic application shutdown. [52e427e]
+- Windows: ensured Word documents and application instances are closed
+  on conversion errors when `keepOpen` is disabled. [03ab659]
+- README: corrected CLI examples to use `-o` / `--output`
+  and updated the documented command syntax. [a708b9d]
+
 ## [0.1.5] - 2026-11-07
 
 ### Added
@@ -12,7 +26,7 @@
 
 ### Added
 - CLI: automatic skipping of Microsoft Word temporary files
-  (`~$*.doc`, `~$*.docx`, `~$*.rtf`, `~$*.odt`).
+  (`~$*.docx`, `~$*.doc`, `~$*.rtf`, `~$*.txt`, `~$*.html`, `~$*.odt`).
 - Added `--include-temp` flag to disable temporary file filtering.
 
 ### Fixed
