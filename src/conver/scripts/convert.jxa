@@ -18,13 +18,13 @@ SETUP (macOS):
 
 SUPPORTED FORMATS:
     The script supports the following file extensions for input and output:
+    - PDF (.pdf)                // Export documents to PDF format
     - Microsoft Word (.docx)    // Modern Word document format
     - Word 97-2003 (.doc)       // Legacy Word document format
-    - PDF (.pdf)                // Export documents to PDF format
     - Rich Text Format (.rtf)   // Basic document format with limited formatting
-    - OpenDocument Text (.odt)  // OpenOffice/LibreOffice document format
     - Plain Text (.txt)         // Plain text format without any formatting
     - HTML (.html)              // Web page format for viewing in browsers
+    - OpenDocument Text (.odt)  // OpenOffice/LibreOffice document format
 
 PARAMETERS:
     - input: "<path to input file>"     // Path to the input file (required)
@@ -56,13 +56,13 @@ const SystemEvents = Application("System Events");
 
 // Supported file formats with their corresponding codes in Word
 const formatCodes = {
+    "pdf": 17,
     "docx": 16,
     "doc": 0,
-    "pdf": 17,
     "rtf": 6,
-    "odt": 19,
     "txt": 7,
-    "html": 8
+    "html": 8,
+    "odt": 19,
 };
 
 // Retrieve the format code based on file extension, if supported
@@ -148,6 +148,9 @@ function run(argv) {
     const Word = Application("Microsoft Word");
     Word.includeStandardAdditions = true;
 
+    let wordWasRunning = true;
+    let doc = null;
+
     try {
         // Check if the input file exists
         const fileManager = $.NSFileManager.defaultManager;
@@ -163,7 +166,9 @@ function run(argv) {
         }
 
         // Activate or launch Word if not already running
-        if (!Word.running()) {
+        wordWasRunning = Word.running();
+
+        if (!wordWasRunning) {
             Word.activate();
 
             // Wait for Word to start
@@ -186,20 +191,26 @@ function run(argv) {
                 }));
                 $.exit(21);
             }
-        } else {
-            Word.launch();
-            SystemEvents.processes["Microsoft Word"].visible = false;
         }
 
         // Open the document and save it in the desired format
         Word.open(inputPath);
-        const doc = Word.documents[0];
+        doc = Word.activeDocument;
         doc.saveAs({
             fileName: outputPath,
             fileFormat: outputFormat
         });
         doc.close({ saving: "no" });  // Close the document without saving any changes
+        doc = null;
     } catch (error) {
+        if (doc !== null) {
+            try { doc.close({ saving: "no" }); } catch (_) {}
+        }
+
+        if (!keepOpen) {
+            try { Word.quit(); } catch (_) {}
+        }
+
         console.log(JSON.stringify({
             "status": "error",
             "input": inputPath,
