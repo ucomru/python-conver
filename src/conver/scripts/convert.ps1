@@ -105,7 +105,7 @@ if (-not $inputPath -or -not $outputPath) {
 $inputExtension = [System.IO.Path]::GetExtension($inputPath).TrimStart('.').ToLower()
 $inputFormat = Get-FormatCodeByExtension -extension $inputExtension
 
-if (-not $inputFormat) {
+if ($null -eq $inputFormat) {
     Write-Output (ConvertTo-Json @{
         status = "error"
         input = $inputPath
