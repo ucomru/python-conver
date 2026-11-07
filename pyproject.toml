@@ -31,7 +31,7 @@ conver = "conver.cli:cli"
 where = ["src"]
 
 [tool.setuptools.package-data]
-conver = ["scripts/*"]
+conver = ["py.typed", "scripts/*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "conver.__version__" }
