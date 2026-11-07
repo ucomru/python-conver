@@ -16,13 +16,13 @@ SETUP (Windows):
 
 SUPPORTED FORMATS:
     The script supports the following file extensions for input and output:
+    - PDF (.pdf)                # Export documents to PDF format
     - Microsoft Word (.docx)    # Modern Word document format
     - Word 97-2003 (.doc)       # Legacy Word document format
-    - PDF (.pdf)                # Export documents to PDF format
     - Rich Text Format (.rtf)   # Basic document format with limited formatting
-    - OpenDocument Text (.odt)  # OpenOffice/LibreOffice document format
     - Plain Text (.txt)         # Plain text format without any formatting
     - HTML (.html)              # Web page format for viewing in browsers
+    - OpenDocument Text (.odt)  # OpenOffice/LibreOffice document format
 
 PARAMETERS:
     - input: "<path to input file>"     # Path to the input file (required)
@@ -55,20 +55,20 @@ param (
 
 # Supported file formats and corresponding codes for Microsoft Word
 $formatCodes = @{
+    "pdf" = 17
     "docx" = 16
     "doc" = 0
-    "pdf" = 17
     "rtf" = 6
-    "odt" = 19
     "txt" = 7
     "html" = 8
+    "odt" = 19
 }
 
 # Function to retrieve format code by extension
 function Get-FormatCodeByExtension {
     param ($extension)
     $extension = $extension.ToLower()
-    return $formatCodes[$extension] -as [int]
+    return $formatCodes[$extension]
 }
 
 # Parse JSON input
@@ -145,10 +145,11 @@ try {
     exit 21
 }
 
-$word.Visible = $false
-$wordStartedByScript = $false
+$doc = $null
 
 try {
+    $word.Visible = $false
+
     # Check if input file exists
     if (-not (Test-Path -Path $inputPath)) {
         Write-Output (ConvertTo-Json @{
@@ -164,7 +165,8 @@ try {
     # Open and convert the document
     $doc = $word.Documents.Open($inputPath)
     $doc.SaveAs([ref]$outputPath, [ref]$outputFormat)
-    $doc.Close()
+    $doc.Close([ref]0)
+    $doc = $null
 } catch {
     Write-Output (ConvertTo-Json @{
         status = "error"
@@ -174,6 +176,15 @@ try {
         error_code = 31
     })
     exit 31
+} finally {
+    # Close Word if opened by the script and keepOpen is false
+    if ($null -ne $doc) {
+        try { $doc.Close([ref]0) } catch {}
+    }
+
+    if (-not $keepOpen) {
+        try { $word.Quit() } catch {}
+    }
 }
 
 # Success message
@@ -184,8 +195,3 @@ Write-Output (ConvertTo-Json @{
     message = "OK"
     error_code = 0
 })
-
-# Close Word if opened by the script and keepOpen is false
-if (-not $keepOpen) {
-    $word.Quit()
-}
