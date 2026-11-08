@@ -147,9 +147,9 @@ def _execute_command(command: list[str], input: str, output: str) -> ConvertResu
     Executes the command for either macOS or Windows and parses the JSON output.
 
     Attempts to run the provided script command and expects JSON output for successful completion.
-    In cases where the script exits with an error, the `error_code` from the script’s JSON response
-    is returned directly to help identify specific issues. If JSON parsing fails, a general error
-    code of 98 is returned.
+    In cases where the script exits with an error, the `error_code` from the script’s
+    JSON response is returned directly to help identify specific issues.
+    If JSON parsing fails, a general error code of 98 is returned.
 
     Parameters:
         command (List[str]): The command to be executed.
