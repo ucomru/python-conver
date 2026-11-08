@@ -1,5 +1,27 @@
 # Conver Changelog
 
+## [0.1.7] - 2026-11-08
+
+### Added
+- Added `.htm` extension support as an alias for `.html` on macOS and Windows. [59b4aa7]
+- CLI: added optional macOS staging mode (`-s`, `--stage`) with `--stage-dir`, `--no-stage`,
+  and environment variables `CONVER_STAGE` and `CONVER_STAGE_DIR` to reduce Word
+  output-directory access prompts. [83c7c59]
+
+### Fixed
+- MacOS: reduced Microsoft Word file access prompts by passing JXA `Path` objects 
+  instead of strings when opening documents. [8131f4e]
+- IPC: improved validation of JSON responses and subprocess exit codes to prevent malformed
+  or inconsistent results from being treated as successful conversions. [1144fda]
+- Python API: improved conversion result validation by checking both status
+  and error code. [a935999]
+- CLI: added source-file overwrite protection and temporary-file cleanup
+  for staged conversions. [83c7c59]
+
+### Changed`
+- Python API: renamed `conver()` parameters from `input_path` and `output_path`
+  to `input` and `output`. [a935999]
+
 ## [0.1.6] - 2026-11-07
 
 ### Fixed
@@ -7,7 +29,7 @@
   (missing leading dots). [a2fe1f5]
 - Windows: fixed DOC input format validation by checking for null instead
   of treating format code `0` as invalid. [3aa808a]
-- macOS: improved Word cleanup on conversion errors while preserving efficient
+- MacOS: improved Word cleanup on conversion errors while preserving efficient
   batch conversion and automatic application shutdown. [52e427e]
 - Windows: ensured Word documents and application instances are closed
   on conversion errors when `keepOpen` is disabled. [03ab659]
@@ -70,7 +92,7 @@
     - Made format-flag resolution consistent across all branches
       (pdf default fallback preserved).
     - Added support for --doc and --odt output formats.
-- Unified behavior of native conversion scripts: removed obsolete macOS-specific logic
+- Unified behavior of native conversion scripts: removed obsolete MacOS-specific logic
   and updated USAGE blocks for consistent, readable cross-platform operation. [878ffb2]
 
 ## [0.1.1] - 2025-11-17
@@ -97,5 +119,5 @@
 - High-level Python API: `conver()` for Word document conversion.
 - Reliable IPC layer with normalized JSON protocol.
 - Native automation scripts:
-  - macOS: `convert.jxa` (JXA / osascript)
+  - MacOS: `convert.jxa` (JXA / osascript)
   - Windows: `convert.ps1` (PowerShell + Word COM)

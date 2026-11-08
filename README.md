@@ -25,6 +25,7 @@ with `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.odt`.
 - Clean, minimal Python API
 - CLI with direct input/output or format-selection flags
 - Optional quiet mode for scripting and batch conversion
+- Optional staging mode on macOS to reduce Microsoft Word output-directory access prompts
 - Structured error handling via custom exceptions
 - Filename-only outputs automatically placed next to the input file
 - Safe low-level IPC layer between Python and native automation scripts
@@ -58,7 +59,7 @@ conver --help
 
 - Python **3.12+**  
 - Microsoft Word must be installed on the system  
-- macOS (JXA) or Windows (PowerShell + Word COM automation)  
+- MacOS (JXA) or Windows (PowerShell + Word COM automation)  
 
 ---
 
@@ -101,27 +102,27 @@ except UnsupportedFormat:
 
 High-level document conversion API.
 
-*Signature*:
+*Signature:*
 
 ```python
-conver(input_path, output_path, keep_open=False) -> pathlib.Path
+conver(input=input_path, output=output_path, keep_open=False) -> pathlib.Path
 ```
 
-*Parameters*:
+*Parameters:*
 
-- `input_path: str | Path`  
+- `input: str | Path`  
   Path to the source document.
-- `output_path: str | Path`  
+- `output: str | Path`  
   Output filename or full path.
 - `keep_open: bool`  
   Leave Microsoft Word running after conversion.
 
-*Returns*:
+*Returns:*
 
 - `pathlib.Path`  
   Absolute path of the generated output file.
 
-*Raises*:
+*Raises:*
 
 - `InputFileNotFound`
 - `UnsupportedFormat`
@@ -156,21 +157,22 @@ If only one input file and no explicit output is given,
 the selected format determines the extension:
 
 ```bash
-input.docx --pdf # -> input.pdf
-input.docx --rtf # -> input.rtf
+conver input.docx --pdf # -> input.pdf
+conver input.docx --rtf # -> input.rtf
 ```
 
 ### Output Behavior
 
 When OUTPUT is omitted, the resulting file is written next to the INPUT file.
-Examples:
+
+*Examples:*
 
 ```bash
 conver a.docx --pdf # -> a.pdf
 conver /path/x.docx # -> /path/x.pdf
 ```
 
-When multiple inputs are provided, --output must be a directory.  
+When multiple inputs are provided, `--output`, if specified, must be a directory.
 If the directory does not exist, it will be created automatically.
 
 ### Default Format
@@ -194,17 +196,55 @@ conver input.docx --pdf --quiet
 conver *.docx -q
 ```
 
+### Staging Mode (macOS only)
+
+Microsoft Word for macOS may request permission to save files in certain directories.
+
+Use `-s` or `--stage` to save converted files to a temporary location before moving them
+to the final output directory.
+
+```bash
+conver input.docx --pdf -s
+conver *.docx --pdf -o converted/ --stage
+```
+
+The default staging directory is `~/Downloads`. Use `--stage-dir` to specify a different directory:
+
+```bash
+conver input.docx --pdf -s --stage-dir ~/Documents/WordTemp
+```
+
+Staging can also be configured through environment variables:
+
+```bash
+export CONVER_STAGE=1
+export CONVER_STAGE_DIR="$HOME/Downloads"
+```
+
+Use `--no-stage` to explicitly disable staging, including when enabled through `CONVER_STAGE`.
+
+**Notes:**
+- Staging is supported only on macOS.
+- The staging directory must already exist and be accessible to Microsoft Word.
+- HTML output (`.html` and `.htm`) always uses direct conversion; staging is bypassed.
+- Temporary output files are deleted after conversion or failure.
+- Staging reduces output-directory permission prompts but does not suppress all Microsoft Word dialogs.
+
 ### CLI Syntax
 
-```
-Usage:
-    conver INPUT... [-o OUTPUT] [--pdf --docx --rtf --txt --html --odt --doc] [--keep-open] [--quiet]
+*Usage:*
 
-Examples:
-    conver a.docx -o a.pdf
-    conver a.docx --pdf
-    conver /path/to/file.doc --html
-    conver *.docx -o converted/
+```
+conver INPUT... [-o OUTPUT] [--pdf | --docx | --doc | --rtf | --txt | --html | --odt] [-k] [-q] [-s] [--stage-dir PATH]
+```
+
+*Examples:*
+
+```bash
+conver a.docx -o a.pdf
+conver a.docx --pdf
+conver /path/to/file.doc --html
+conver *.docx -o converted/
 ```
 
 ### CLI Arguments
@@ -217,6 +257,17 @@ Examples:
     For single input: output filename.  
     For multiple inputs: must be a directory.
 
+`-s, --stage`
+    Enable macOS staging mode. Can also be enabled using `CONVER_STAGE=1`.
+
+`--no-stage`
+    Explicitly disable staging, overriding `CONVER_STAGE`.
+
+`--stage-dir PATH`
+    Temporary output directory. Default: `~/Downloads`.
+    Can also be set using `CONVER_STAGE_DIR`.
+    Does not enable staging by itself.
+
 ### Multiple Inputs (Batch Mode)
 
 The CLI can process multiple input files at once:
@@ -226,20 +277,20 @@ conver *.docx -o outdir
 conver file1.docx file2.docx file3.docx -o converted/
 ```
 
-*Rules*:
+*Rules:*
 
-- When multiple inputs are provided, `--output` **must** point to a directory.
+- When multiple inputs are provided, `--output`, if specified, must point to a directory.
 - If the directory does not exist, it will be created automatically.
 - If no format flag is provided, the default output format is **PDF**.
 - Format flags (`--pdf`, `--rtf`, etc.) **cannot be used together with** `--output FILE`.
 - Globbing (`*.docx`) is expanded by your shell before reaching the CLI.
 
-
 If multiple input files are provided and `--output` is **not** specified,
 the CLI automatically attempts to infer a common parent directory for all inputs.
 If all files reside in the same directory, that directory becomes the output location.
 
-Example:
+*Example:*
+
 ```bash
 conver *.docx
 # -> writes output next to each input file
@@ -261,25 +312,27 @@ conver path/*.rtf --pdf
 This means the CLI receives the expanded list of files as separate arguments.
 
 By default, the CLI skips Microsoft Word temporary files
-(`~$*.docx`, `~$*.doc`, `~$*.rtf`, `~$*.txt`, `~$*.html`, `~$*.odt`).
+(`~$*.docx`, `~$*.doc`, `~$*.rtf`, `~$*.txt`, `~$*.html`, `~$*.htm`, `~$*.odt`).
 
 Use `--include-temp` to disable this filter.
 
 ### Format-Flag Restrictions
 
-Format-selection flags: `--pdf`, `--docx`, `--doc`, `--rtf`, `--txt`, `--html`, `--odt`
+Format-selection flags (`--pdf`, `--docx`, `--doc`, `--rtf`, `--txt`, `--html`, `--odt`)
+can be combined with an output directory, but not with an explicit output file path.
 
-Work **only when OUTPUT is omitted**, i.e.:
+*Allowed:*
 
-*Allowed*:  
 ```bash
 conver input.docx --pdf
 conver input.docx -o output.pdf
+conver *.docx -o converted/ --pdf
 ```
 
-*Invalid*:  
+*Invalid:*
+
 ```bash
-conver input.docx output.pdf --pdf
+conver input.docx -o output.pdf --pdf
 ```
 
 ---
@@ -288,9 +341,9 @@ conver input.docx output.pdf --pdf
 
 Conversion capabilities depend on Microsoft Word.
 
-Input formats: `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.odt`
+Input formats: `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.htm`, `.odt`
 
-Output formats: `.pdf`, `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.odt`
+Output formats: `.pdf`, `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.htm`, `.odt`
 
 ---
 
@@ -304,7 +357,8 @@ The script `convert.jxa` runs through:
 osascript -l JavaScript
 ```
 
-macOS may require granting Microsoft Word file-access permissions.
+Microsoft Word may request file-access permissions for output directories.
+The optional staging mode can reduce these prompts. See [Staging Mode](#staging-mode-macos-only).
 
 ### Windows (PowerShell)
 
