@@ -1,11 +1,11 @@
+import shutil
 import sys
 from collections.abc import Iterable
 from pathlib import Path
+from uuid import uuid4
 
 from click import (
-    Path as ClickPath,
-)
-from click import (
+    ClickException,
     UsageError,
     argument,
     command,
@@ -13,20 +13,50 @@ from click import (
     option,
     version_option,
 )
+from click import (
+    Path as ClickPath,
+)
 
 from .__version__ import __version__
 from .conver import ConverError, conver
 
-WORD_EXTENSIONS = frozenset({".docx", ".doc", ".rtf", ".txt", ".html", ".odt"})
+WORD_EXTENSIONS = frozenset({".docx", ".doc", ".rtf", ".txt", ".html", ".htm", ".odt"})
 
 
-def fail(label: str, err: Exception, code: int = 1):
+def _fail(label: str, err: Exception, code: int = 1):
     echo(f"{label} {err}", err=True)
     sys.exit(code)
 
 
-def is_word_temp_file(path: Path) -> bool:
+def _is_word_temp_file(path: Path) -> bool:
     return path.name.startswith("~$") and path.suffix.lower() in WORD_EXTENSIONS
+
+
+def _conver_stage(
+    input: Path,
+    output: Path,
+    keep_open: bool,
+    stage_dir: Path,
+) -> Path:
+    output = output.absolute()
+
+    if output.exists() and input.samefile(output):
+        raise UsageError("Staging cannot overwrite the input file.")
+
+    name = f"_conver-temp-{uuid4().hex}{output.suffix}"
+    staged = stage_dir / name
+    pending = output.with_name(f".{name}")
+
+    try:
+        _ = conver(input, staged, keep_open=keep_open)
+        _ = shutil.move(staged, pending)
+        _ = pending.replace(output)
+        return output
+    except OSError as err:
+        raise ClickException(f"Staging failed: {err}") from err
+    finally:
+        staged.unlink(missing_ok=True)
+        pending.unlink(missing_ok=True)
 
 
 def _infer_common_parent(paths: Iterable[Path]) -> Path | None:
@@ -54,7 +84,23 @@ def _infer_common_parent(paths: Iterable[Path]) -> Path | None:
 @option("-u", "--odt", "target", flag_value="odt", help="Convert to ODT")
 @option("-k", "--keep-open", is_flag=True, help="Keep Microsoft Word open")
 @option("-q", "--quiet", is_flag=True, help="Suppress output on success")
-@option("--include-temp", is_flag=True, help="Include MS Word temp files: ~$...")
+@option(
+    "-s",
+    "--stage/--no-stage",
+    default=False,
+    envvar="CONVER_STAGE",
+    help="Use temporary output staging (macOS only)",
+)
+@option(
+    "--stage-dir",
+    type=ClickPath(path_type=Path),
+    default=Path.home() / "Downloads",
+    envvar="CONVER_STAGE_DIR",
+    help="Directory for staged output [~/Downloads]",
+)
+@option(
+    "--include-temp", is_flag=True, help="Include MS Word temp files (start with ~$)"
+)
 @version_option(__version__, "-v", "--version")
 def cli(
     inputs: tuple[Path, ...],
@@ -62,14 +108,25 @@ def cli(
     target: str | None,
     keep_open: bool,
     quiet: bool,
+    stage: bool,
+    stage_dir: Path,
     include_temp: bool,
 ) -> None:
     """Convert documents using Microsoft Word."""
     if not include_temp:
-        inputs = tuple(inp for inp in inputs if not is_word_temp_file(inp))
+        inputs = tuple(inp for inp in inputs if not _is_word_temp_file(inp))
 
     if not inputs:
         raise UsageError("No input files specified.")
+
+    if stage:
+        if sys.platform != "darwin":
+            raise UsageError("Staging mode is supported only on macOS.")
+
+        stage_dir = stage_dir.expanduser().resolve()
+
+        if not stage_dir.is_dir():
+            raise UsageError(f"Staging directory does not exist: {stage_dir}")
 
     # --- MULTIPLE INPUTS ---
     if len(inputs) > 1:
@@ -89,23 +146,35 @@ def cli(
         if target is None:
             target = "pdf"
 
-        for idx, inp in enumerate(inputs):
+        for index, input in enumerate(inputs):
             # Keep Word open for all but the last file
-            effective_keep_open = (idx < len(inputs) - 1) or keep_open
+            effective_keep_open = (index < len(inputs) - 1) or keep_open
 
-            out_file = output / (inp.stem + f".{target}")
+            output_file = output / (input.stem + f".{target}")
 
             try:
-                result = conver(inp, out_file, keep_open=effective_keep_open)
+                if not stage or output_file.suffix.lower() in {".html", ".htm"}:
+                    result = conver(
+                        input=input,
+                        output=output_file,
+                        keep_open=effective_keep_open,
+                    )
+                else:
+                    result = _conver_stage(
+                        input=input,
+                        output=output_file,
+                        keep_open=effective_keep_open,
+                        stage_dir=stage_dir,
+                    )
 
                 if not quiet:
                     echo(result)
             except ConverError as err:
-                fail("Error:", err, err.error_code or 1)
+                _fail("Error:", err, err.error_code or 1)
 
     # --- SINGLE INPUT ---
     elif len(inputs) == 1:
-        inp = inputs[0]
+        input = inputs[0]
 
         if output is not None:
             output = output.resolve()
@@ -115,24 +184,36 @@ def cli(
                     raise UsageError(
                         "Cannot use format flag when output is a file path."
                     )
-                out_file = output
+                output_file = output
             else:
                 if target is None:
                     target = "pdf"
 
                 output.mkdir(parents=True, exist_ok=True)
-                out_file = output / (inp.stem + f".{target}")
+                output_file = output / (input.stem + f".{target}")
 
         else:
             if target is None:
                 target = "pdf"
 
-            out_file = inp.with_suffix("." + target)
+            output_file = input.with_suffix("." + target)
 
         try:
-            result = conver(inp, out_file, keep_open=keep_open)
+            if not stage or output_file.suffix.lower() in {".html", ".htm"}:
+                result = conver(
+                    input=input,
+                    output=output_file,
+                    keep_open=keep_open,
+                )
+            else:
+                result = _conver_stage(
+                    input=input,
+                    output=output_file,
+                    keep_open=keep_open,
+                    stage_dir=stage_dir,
+                )
 
             if not quiet:
                 echo(result)
         except ConverError as err:
-            fail("Error:", err, err.error_code or 1)
+            _fail("Error:", err, err.error_code or 1)
