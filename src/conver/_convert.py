@@ -17,12 +17,12 @@ MODULE OVERVIEW:
     into Python exceptions on failure.
 
 USAGE:
-    To use the `convert` function, specify the `input_path`, `output_path`, and optionally
+    To use the `convert` function, specify the `input`, `output`, and optionally
     `keep_open` to indicate whether the application should remain open post-conversion.
 
 RECOMMENDED PATHS:
     Use paths like "~/Downloads/" on macOS or "C:/Users/YourName/Downloads/" on Windows
-    for both `input_path` and `output_path` to ensure permission consistency.
+    for both `input` and `output` to ensure permission consistency.
 
 SETUP (macOS):
     1. Go to System Settings > Privacy & Security > Files and Folders.
@@ -76,9 +76,7 @@ class ConvertResult(TypedDict):
     error_code: int
 
 
-def convert(
-    input_path: str, output_path: str, keep_open: bool = False
-) -> ConvertResult:
+def convert(input: str, output: str, keep_open: bool = False) -> ConvertResult:
     """
     Convert a document from one format to another using platform-specific scripts.
 
@@ -89,8 +87,8 @@ def convert(
     it matches the strict structure defined by `ConvertResult`.
 
     Parameters:
-        input_path (str): The path to the source file.
-        output_path (str): The path where the converted file will be saved.
+        input (str): The path to the source file.
+        output (str): The path where the converted file will be saved.
         keep_open (bool): Whether to keep the application (Word/Excel) open after processing.
 
     Returns:
@@ -102,23 +100,21 @@ def convert(
         that are not captured by the script will return error_code 98 for JSON parsing failures.
     """
     if sys.platform == "darwin":
-        return _run_macos_script(input_path, output_path, keep_open)
+        return _run_macos_script(input, output, keep_open)
     elif sys.platform == "win32":
-        return _run_windows_script(input_path, output_path, keep_open)
+        return _run_windows_script(input, output, keep_open)
     else:
         # Unsupported platform
         return {
             "status": "error",
-            "input": input_path,
-            "output": output_path,
+            "input": input,
+            "output": output,
             "message": "Unsupported platform.",
             "error_code": 99,
         }
 
 
-def _run_macos_script(
-    input_path: str, output_path: str, keep_open: bool
-) -> ConvertResult:
+def _run_macos_script(input: str, output: str, keep_open: bool) -> ConvertResult:
     """Run macOS JXA script for conversion."""
     with as_file(files("conver.scripts").joinpath("convert.jxa")) as script_path:
         command = [
@@ -126,14 +122,12 @@ def _run_macos_script(
             "-l",
             "JavaScript",
             str(script_path),
-            dumps({"input": input_path, "output": output_path, "keepOpen": keep_open}),
+            dumps({"input": input, "output": output, "keepOpen": keep_open}),
         ]
-        return _execute_command(command, input_path, output_path)
+        return _execute_command(command, input, output)
 
 
-def _run_windows_script(
-    input_path: str, output_path: str, keep_open: bool
-) -> ConvertResult:
+def _run_windows_script(input: str, output: str, keep_open: bool) -> ConvertResult:
     """Run Windows PowerShell script for conversion."""
     with as_file(files("conver.scripts").joinpath("convert.ps1")) as script_path:
         command = [
@@ -143,14 +137,12 @@ def _run_windows_script(
             "-File",
             str(script_path),
             "-jsonArgs",
-            dumps({"input": input_path, "output": output_path, "keepOpen": keep_open}),
+            dumps({"input": input, "output": output, "keepOpen": keep_open}),
         ]
-        return _execute_command(command, input_path, output_path)
+        return _execute_command(command, input, output)
 
 
-def _execute_command(
-    command: list[str], input_path: str, output_path: str
-) -> ConvertResult:
+def _execute_command(command: list[str], input: str, output: str) -> ConvertResult:
     """
     Executes the command for either macOS or Windows and parses the JSON output.
 
@@ -161,8 +153,8 @@ def _execute_command(
 
     Parameters:
         command (List[str]): The command to be executed.
-        input_path (str): The path to the input file, passed for error context.
-        output_path (str): The path to the output file, passed for error context.
+        input (str): The path to the input file, passed for error context.
+        output (str): The path to the output file, passed for error context.
 
     Returns:
         ConvertResult: A structured dictionary with status, message, error code, input, and output.
@@ -174,20 +166,34 @@ def _execute_command(
 
     try:
         data = cast(ConvertResult, loads(raw))
-    except JSONDecodeError:
+        code = cast(object, data.get("error_code"))
+
+        if type(code) is not int:
+            raise ValueError("Invalid error_code")
+
+    except (JSONDecodeError, AttributeError, ValueError):
         return {
             "status": "error",
-            "input": input_path,
-            "output": output_path,
+            "input": input,
+            "output": output,
             "message": "Invalid JSON output from script.",
+            "error_code": 98,
+        }
+
+    if result.returncode != 0 and data.get("error_code") == 0:
+        return {
+            "status": "error",
+            "input": input,
+            "output": output,
+            "message": f"Script exited with code {result.returncode}.",
             "error_code": 98,
         }
 
     # canonical normalized result
     return {
         "status": data.get("status", "error"),
-        "input": data.get("input", input_path),
-        "output": data.get("output", output_path),
+        "input": data.get("input", input),
+        "output": data.get("output", output),
         "message": data.get("message", ""),
         "error_code": data.get("error_code", result.returncode),
     }
