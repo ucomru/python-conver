@@ -69,41 +69,41 @@ def _expanduser(path: str | Path) -> Path:
 
 
 def _normalize_paths(
-    input_path: str | Path,
-    output_path: str | Path,
+    input: str | Path,
+    output: str | Path,
 ) -> tuple[Path, Path]:
     """
     Normalize and resolve input/output paths.
 
     Rules:
-    - input_path is converted to absolute Path.
-    - output_path:
+    - input is converted to absolute Path.
+    - output:
         * if only a filename is provided, it is placed into the same directory
-          as input_path;
+          as input;
         * otherwise, it is resolved relative to the filesystem.
     - All returned paths are absolute.
     """
 
     # Normalize input
-    in_path = _expanduser(input_path).absolute()
+    input_path = _expanduser(input).absolute()
 
     # Normalize output raw
-    out_raw = _expanduser(output_path)
+    output_raw = _expanduser(output)
 
     # filename-only -> drop into input directory
-    if out_raw.parent == Path("."):
-        out_path = in_path.parent / out_raw
+    if output_raw.parent == Path("."):
+        output_path = input_path.parent / output_raw
     else:
-        out_path = out_raw
+        output_path = output_raw
 
-    out_path = out_path.absolute()
+    output_path = output_path.absolute()
 
-    return in_path, out_path
+    return input_path, output_path
 
 
 def conver(
-    input_path: str | Path,
-    output_path: str | Path,
+    input: str | Path,
+    output: str | Path,
     keep_open: bool = False,
 ) -> Path:
     """
@@ -111,9 +111,9 @@ def conver(
 
     Parameters
     ----------
-    input_path : str or pathlib.Path
+    input : str or pathlib.Path
         Path to the source document.
-    output_path : str or pathlib.Path
+    output : str or pathlib.Path
         Target output path with desired extension.
     keep_open : bool, default=False
         Whether to keep Microsoft Word open after conversion.
@@ -139,22 +139,23 @@ def conver(
         The current OS is not supported.
     """
 
-    in_path, out_path = _normalize_paths(input_path, output_path)
+    input_path, output_path = _normalize_paths(input, output)
 
-    if not in_path.exists():
-        raise InputFileNotFound(f"Input file does not exist: {in_path}", 11)
+    if not input_path.exists():
+        raise InputFileNotFound(f"Input file does not exist: {input_path}", 11)
 
     result = convert(
-        input_path=str(in_path),
-        output_path=str(out_path),
+        input=str(input_path),
+        output=str(output_path),
         keep_open=keep_open,
     )
 
-    code = result.get("error_code", None)
-    msg = result.get("message", "Unknown error")
+    code = result.get("error_code")
+    msg = result.get("message") or "Unknown error"
 
-    if code and code != 0:
-        exc_class = _ERROR_MAP.get(code, ConverError)
+    if code != 0 or result.get("status") != "success":
+        code = code or 98
+        exc_class = _ERROR_MAP.get(code, IPCError)
         raise exc_class(f"[{code}] {msg}", code)
 
-    return out_path
+    return output_path
