@@ -23,7 +23,7 @@ SUPPORTED FORMATS:
     - Word 97-2003 (.doc)       // Legacy Word document format
     - Rich Text Format (.rtf)   // Basic document format with limited formatting
     - Plain Text (.txt)         // Plain text format without any formatting
-    - HTML (.html)              // Web page format for viewing in browsers
+    - HTML (.html, .htm)        // Web page format for viewing in browsers
     - OpenDocument Text (.odt)  // OpenOffice/LibreOffice document format
 
 PARAMETERS:
@@ -62,6 +62,7 @@ const formatCodes = {
     "rtf": 6,
     "txt": 7,
     "html": 8,
+    "htm": 8,
     "odt": 19,
 };
 
@@ -221,6 +222,11 @@ function run(argv) {
         $.exit(31);
     }
 
+    // Close Word unless keepOpen is explicitly set to true
+    if (!keepOpen) {
+        Word.quit();
+    }
+
     // Output success message in JSON format
     console.log(JSON.stringify({
         "status": "success",
@@ -229,9 +235,4 @@ function run(argv) {
         "message": "OK",
         "error_code": 0
     }));
-
-    // Close Word unless keepOpen is explicitly set to true
-    if (!keepOpen) {
-        Word.quit();
-    }
 }

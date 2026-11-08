@@ -21,7 +21,7 @@ SUPPORTED FORMATS:
     - Word 97-2003 (.doc)       # Legacy Word document format
     - Rich Text Format (.rtf)   # Basic document format with limited formatting
     - Plain Text (.txt)         # Plain text format without any formatting
-    - HTML (.html)              # Web page format for viewing in browsers
+    - HTML (.html, .htm)        # Web page format for viewing in browsers
     - OpenDocument Text (.odt)  # OpenOffice/LibreOffice document format
 
 PARAMETERS:
@@ -61,6 +61,7 @@ $formatCodes = @{
     "rtf" = 6
     "txt" = 7
     "html" = 8
+    "htm" = 8
     "odt" = 19
 }
 
@@ -120,7 +121,7 @@ if ($null -eq $inputFormat) {
 $outputExtension = [System.IO.Path]::GetExtension($outputPath).TrimStart('.').ToLower()
 $outputFormat = Get-FormatCodeByExtension -extension $outputExtension
 
-if ($outputFormat -eq $null) {
+if ($null -eq $outputFormat) {
     Write-Output (ConvertTo-Json @{
         status = "error"
         input = $inputPath
