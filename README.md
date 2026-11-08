@@ -42,18 +42,31 @@ pip install --upgrade conver
 
 ### Recommended for CLI use: pipx
 
-If you primarily use `conver` as a command-line tool, it is best installed with **pipx**.  
-This isolates the package in its own virtual environment and avoids polluting your system Python:
+If you primarily use `conver` as a command-line tool, we recommend installing it
+with [pipx](https://pipx.pypa.io/).  
+
+It installs applications in isolated virtual environments without affecting your system Python.
+
+*Install:*
 
 ```bash
-pipx install --upgrade conver
+pipx install conver
 ```
 
-After installation it will be available globally:
+*Upgrade:*
+
+```bash
+pipx upgrade conver
+```
+
+After installation, the `conver` command will be available globally:
 
 ```bash
 conver --help
 ```
+
+If `pipx` is *not installed*,
+see the [official installation guide](https://pipx.pypa.io/stable/how-to/install-pipx.html).
 
 ### Requirements
 
@@ -208,7 +221,8 @@ conver input.docx --pdf -s
 conver *.docx --pdf -o converted/ --stage
 ```
 
-The default staging directory is `~/Downloads`. Use `--stage-dir` to specify a different directory:
+The default staging directory is `~/Downloads`.
+Use `--stage-dir` to specify a different directory:
 
 ```bash
 conver input.docx --pdf -s --stage-dir ~/Documents/WordTemp
@@ -228,14 +242,17 @@ Use `--no-stage` to explicitly disable staging, including when enabled through `
 - The staging directory must already exist and be accessible to Microsoft Word.
 - HTML output (`.html` and `.htm`) always uses direct conversion; staging is bypassed.
 - Temporary output files are deleted after conversion or failure.
-- Staging reduces output-directory permission prompts but does not suppress all Microsoft Word dialogs.
+- Staging reduces output-directory permission prompts but does not suppress
+  all Microsoft Word dialogs.
 
 ### CLI Syntax
 
 *Usage:*
 
 ```
-conver INPUT... [-o OUTPUT] [--pdf | --docx | --doc | --rtf | --txt | --html | --odt] [-k] [-q] [-s] [--stage-dir PATH]
+conver INPUT... [-o OUTPUT] \
+    [--pdf | --docx | --doc | --rtf | --txt | --html | --odt] \
+    [-k] [-q] [-s] [--stage-dir PATH]
 ```
 
 *Examples:*
@@ -358,7 +375,8 @@ osascript -l JavaScript
 ```
 
 Microsoft Word may request file-access permissions for output directories.
-The optional staging mode can reduce these prompts. See [Staging Mode](#staging-mode-macos-only).
+The optional staging mode can reduce these prompts.
+See [Staging Mode](#staging-mode-macos-only).
 
 ### Windows (PowerShell)
 
