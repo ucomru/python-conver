@@ -25,8 +25,9 @@ with `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.odt`.
 - Clean, minimal Python API
 - CLI with direct input/output or format-selection flags
 - Optional quiet mode for scripting and batch conversion
-- Optional macOS staging for both Python API and CLI to reduce Microsoft Word
-  output-directory access prompts
+- Optional filtering of input files by supported extensions
+- Optional macOS staging for both Python API and CLI
+  to reduce Microsoft Word output-directory access prompts
 - Structured error handling via custom exceptions
 - Filename-only outputs automatically placed next to the input file
 - Safe low-level IPC layer between Python and native automation scripts
@@ -296,6 +297,25 @@ conver input.docx --pdf --quiet
 conver *.docx -q
 ```
 
+### Supported Extensions Only
+
+Use `-e` or `--ext-only` to process only files with supported input extensions.
+
+This is useful when converting documents from directories containing other
+file types or subdirectories.
+
+```bash
+conver * -e
+conver * --ext-only
+```
+
+Only regular files with supported extensions
+(`.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.htm`, `.odt`)
+are processed. Extension matching is case-insensitive.
+
+Microsoft Word temporary files (`~$...`) are still excluded by default
+unless `--include-temp` is specified.
+
 ### Staging Mode (macOS only)
 
 Microsoft Word for macOS may request permission to save files in certain directories.
@@ -342,7 +362,7 @@ through `CONVER_STAGE`.
 ```
 conver INPUT... [-o OUTPUT] \
     [--pdf | --docx | --doc | --rtf | --txt | --html | --odt] \
-    [-k] [-q] [-s] [--stage-dir PATH]
+    [-k] [-q] [-e] [-s] [--stage-dir PATH]
 ```
 
 *Examples:*
@@ -363,6 +383,10 @@ conver *.docx -o converted/
     Optional.  
     For a single input: output filename or directory.  
     For multiple inputs: must be a directory.
+
+`-e, --ext-only`  
+    Process only regular files with supported input extensions.  
+    Skip unsupported file types and directories.
 
 `-s, --stage`
     Enable macOS staging mode. Can also be enabled using `CONVER_STAGE=1`.
@@ -419,6 +443,10 @@ conver path/*.rtf --pdf
 ```
 
 This means the CLI receives the expanded list of files as separate arguments.
+
+Use `conver * -e` to process only supported document types in a mixed directory.
+
+Note that shell wildcards such as `*` typically exclude hidden files.
 
 By default, the CLI skips Microsoft Word temporary files
 (`~$*.docx`, `~$*.doc`, `~$*.rtf`, `~$*.txt`, `~$*.html`, `~$*.htm`, `~$*.odt`).

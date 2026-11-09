@@ -25,8 +25,12 @@ def _fail(label: str, err: Exception, code: int = 1):
     sys.exit(code)
 
 
-def _is_word_temp_file(path: Path) -> bool:
-    return path.name.startswith("~$") and path.suffix.lower() in WORD_EXTENSIONS
+def _is_not_word_temp_file(path: Path) -> bool:
+    return not (path.name.startswith("~$") and path.suffix.lower() in WORD_EXTENSIONS)
+
+
+def _is_supported_file(path: Path) -> bool:
+    return path.is_file() and path.suffix.lower() in WORD_EXTENSIONS
 
 
 def _infer_common_parent(paths: Iterable[Path]) -> Path | None:
@@ -54,6 +58,7 @@ def _infer_common_parent(paths: Iterable[Path]) -> Path | None:
 @option("-u", "--odt", "target", flag_value="odt", help="Convert to ODT")
 @option("-k", "--keep-open", is_flag=True, help="Keep Microsoft Word open")
 @option("-q", "--quiet", is_flag=True, help="Suppress output on success")
+@option("-e", "--ext-only", is_flag=True, help="Supported extensions only")
 @option(
     "-s",
     "--stage/--no-stage",
@@ -68,9 +73,7 @@ def _infer_common_parent(paths: Iterable[Path]) -> Path | None:
     envvar="CONVER_STAGE_DIR",
     help="Directory for staged output [~/Downloads]",
 )
-@option(
-    "--include-temp", is_flag=True, help="Include MS Word temp files (start with ~$)"
-)
+@option("--include-temp", is_flag=True, help="Include MS Word temp files ~$...")
 @version_option(__version__, "-v", "--version")
 def cli(
     inputs: tuple[Path, ...],
@@ -78,13 +81,17 @@ def cli(
     target: str | None,
     keep_open: bool,
     quiet: bool,
+    ext_only: bool,
     stage: bool,
     stage_dir: Path,
     include_temp: bool,
 ) -> None:
     """Convert documents using Microsoft Word."""
     if not include_temp:
-        inputs = tuple(inp for inp in inputs if not _is_word_temp_file(inp))
+        inputs = tuple(filter(_is_not_word_temp_file, inputs))
+
+    if ext_only:
+        inputs = tuple(filter(_is_supported_file, inputs))
 
     if not inputs:
         raise UsageError("No input files specified.")
