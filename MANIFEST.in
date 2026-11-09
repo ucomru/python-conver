@@ -1,7 +1,11 @@
-# Include essential documentation files
+# Documentation
 include README.md
 include LICENSE
 include CHANGELOG.md
 
-# Recursively include all files in the scripts folder within src/conver
-recursive-include src/conver/scripts *
+# Typing marker (PEP 561)
+include src/conver/py.typed
+
+# Platform-specific conversion scripts
+include src/conver/scripts/convert.jxa
+include src/conver/scripts/convert.ps1

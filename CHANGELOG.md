@@ -1,5 +1,13 @@
 # Conver Changelog
 
+## [0.1.8] - 2026-11-09
+
+### Added
+- Exposed `conver_stage()` in the public Python API, with `StagingError`
+  for staging-related failures. [720fa20]
+- Added `-e, --ext-only` CLI option to process only files with supported input extensions,
+  skipping unsupported files and directories. [aa14dcb]
+
 ## [0.1.7] - 2026-11-08
 
 ### Added
