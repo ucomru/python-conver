@@ -5,18 +5,22 @@
 """
 High-level document conversion API.
 
-This module exposes the `conver()` function — a Pythonic wrapper around the
-low-level IPC-based converter. It normalizes paths, performs minimal validation,
-invokes the underlying platform-specific script, and raises structured exceptions
-on failure.
+This module exposes the `conver()` function — a Pythonic wrapper around the low-level
+IPC-based converter. It normalizes paths, performs minimal validation, invokes
+the underlying platform-specific script, and raises structured exceptions on failure.
 
 Successful conversion returns the resolved output path as a `Path` object.
 Errors are represented as subclasses of `ConverError`.
 """
 
+import shutil
+import sys
 from pathlib import Path
+from uuid import uuid4
 
 from ._convert import convert
+
+_STAGE_PREFIX = "_conver-temp-"
 
 
 class ConverError(Exception):
@@ -51,6 +55,10 @@ class PlatformNotSupported(ConverError):
     pass
 
 
+class StagingError(ConverError):
+    pass
+
+
 _ERROR_MAP = {
     1: IPCError,
     2: UnsupportedFormat,
@@ -78,8 +86,7 @@ def _normalize_paths(
     Rules:
     - input is converted to absolute Path.
     - output:
-        * if only a filename is provided, it is placed into the same directory
-          as input;
+        * if only a filename is provided, it is placed into the same directory as input;
         * otherwise, it is resolved relative to the filesystem.
     - All returned paths are absolute.
     """
@@ -157,5 +164,93 @@ def conver(
         code = code or 98
         exc_class = _ERROR_MAP.get(code, IPCError)
         raise exc_class(f"[{code}] {msg}", code)
+
+    return output_path
+
+
+def conver_stage(
+    input: str | Path,
+    output: str | Path,
+    keep_open: bool = False,
+    stage_dir: str | Path | None = None,
+) -> Path:
+    """
+    Convert a document via a temporary output directory (macOS only).
+
+    The document is converted using Microsoft Word in the staging directory,
+    then moved to the requested output path. This can reduce macOS file-access
+    permission prompts for the final output directory.
+
+    Parameters
+    ----------
+    input : str or pathlib.Path
+        Path to the source document.
+    output : str or pathlib.Path
+        Target output path with desired extension.
+    keep_open : bool, default=False
+        Whether to keep Microsoft Word open after conversion.
+    stage_dir : str, pathlib.Path, or None, default=None
+        Directory for temporary output files. Defaults to ~/Downloads.
+
+    Returns
+    -------
+    Path
+        The resolved absolute output path.
+
+    Raises
+    ------
+    InputFileNotFound
+        The input file does not exist.
+    UnsupportedFormat
+        The source or target format is not supported, or HTML output is requested.
+    WordStartError
+        Microsoft Word could not be started by the script.
+    SaveError
+        The document could not be saved in the staging directory.
+    IPCError
+        Communication with the script failed or produced invalid JSON.
+    PlatformNotSupported
+        The current OS is not macOS.
+    StagingError
+        The staging directory is invalid, the output would overwrite the input,
+        or moving the converted file to its final location failed.
+    """
+    if sys.platform != "darwin":
+        raise PlatformNotSupported("Staging is supported only on macOS.", 99)
+
+    input_path, output_path = _normalize_paths(input, output)
+
+    if not input_path.exists():
+        raise InputFileNotFound(f"Input file does not exist: {input_path}", 11)
+
+    if output_path.suffix.lower() in {".html", ".htm"}:
+        raise UnsupportedFormat("HTML output cannot be staged.", 3)
+
+    stage_path = (
+        _expanduser(stage_dir).absolute()
+        if stage_dir is not None
+        else Path.home() / "Downloads"
+    )
+
+    if not stage_path.is_dir():
+        raise StagingError(f"Staging directory does not exist: {stage_path}")
+
+    name = f"{_STAGE_PREFIX}{uuid4().hex}{output_path.suffix}"
+    staged = stage_path / name
+    pending = output_path.with_name(f".{name}")
+
+    try:
+        try:
+            if output_path.exists() and input_path.samefile(output_path):
+                raise StagingError("Staging cannot overwrite the input file.")
+
+            _ = conver(input_path, staged, keep_open=keep_open)
+            _ = shutil.move(staged, pending)
+            _ = pending.replace(output_path)
+        finally:
+            staged.unlink(missing_ok=True)
+            pending.unlink(missing_ok=True)
+    except OSError as err:
+        raise StagingError(f"Staging failed: {err}") from err
 
     return output_path

@@ -8,7 +8,7 @@ using native system automation:
 
 The package provides:
 
-1. A high-level Python API: `conver.conver()`
+1. A high-level Python API: `conver()` and `conver_stage()`
 2. A command-line interface: `conver`
 3. A low-level IPC layer calling platform scripts  
    (`convert.jxa` for macOS, `convert.ps1` for Windows)
@@ -25,7 +25,8 @@ with `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.odt`.
 - Clean, minimal Python API
 - CLI with direct input/output or format-selection flags
 - Optional quiet mode for scripting and batch conversion
-- Optional staging mode on macOS to reduce Microsoft Word output-directory access prompts
+- Optional macOS staging for both Python API and CLI to reduce Microsoft Word
+  output-directory access prompts
 - Structured error handling via custom exceptions
 - Filename-only outputs automatically placed next to the input file
 - Safe low-level IPC layer between Python and native automation scripts
@@ -42,10 +43,11 @@ pip install --upgrade conver
 
 ### Recommended for CLI use: pipx
 
-If you primarily use `conver` as a command-line tool, we recommend installing it
-with [pipx](https://pipx.pypa.io/).  
+If you primarily use `conver` as a command-line tool,
+we recommend installing it with [pipx](https://pipx.pypa.io/).
 
-It installs applications in isolated virtual environments without affecting your system Python.
+It installs applications in isolated virtual environments without affecting
+your system Python.
 
 *Install:*
 
@@ -65,8 +67,8 @@ After installation, the `conver` command will be available globally:
 conver --help
 ```
 
-If `pipx` is *not installed*,
-see the [official installation guide](https://pipx.pypa.io/stable/how-to/install-pipx.html).
+If `pipx` is *not installed*, see the
+[official installation guide](https://pipx.pypa.io/stable/how-to/install-pipx.html).
 
 ### Requirements
 
@@ -95,6 +97,42 @@ conver("/Users/me/docs/a.docx", "a.pdf")
 ```
 
 Automatically produces: `/Users/me/docs/a.pdf`
+
+### Staging conversion (macOS only)
+
+On macOS, Microsoft Word may request permission to save files in certain directories.
+The `conver_stage()` function converts the document in a temporary directory before
+moving the result to its final destination.
+
+```python
+from conver import conver_stage
+
+conver_stage("document.docx", "document.pdf")
+```
+
+By default, the staging directory is `~/Downloads`.
+
+To specify a different directory:
+
+```python
+conver_stage("document.docx", "document.pdf", stage_dir="~/Documents/WordTemp")
+```
+
+The staging directory must already exist and be accessible to Microsoft Word.
+
+Staging is not supported for HTML output (`.html`, `.htm`).\
+Use `conver()` for these formats.
+
+Staging-related failures raise `StagingError`:
+
+```python
+from conver import conver_stage, StagingError
+
+try:
+    conver_stage("document.docx", "document.pdf")
+except StagingError as err:
+    print(f"Staging failed: {err}")
+```
 
 ### Error handling example
 
@@ -143,6 +181,55 @@ conver(input=input_path, output=output_path, keep_open=False) -> pathlib.Path
 - `SaveError`
 - `IPCError`
 - `PlatformNotSupported`
+
+### `conver_stage()` function
+
+High-level staged document conversion API (macOS only).
+
+Converts a document in a temporary directory, then moves the result to
+the requested output path. This can reduce Microsoft Word file-access
+permission prompts.
+
+*Signature:*
+
+```python
+conver_stage(input, output, keep_open=False, stage_dir=None) -> pathlib.Path
+```
+
+*Parameters:*
+
+- `input: str | Path`
+  Path to the source document.
+- `output: str | Path`
+  Output filename or full path.
+- `keep_open: bool`
+  Leave Microsoft Word running after conversion. Default: `False`.
+- `stage_dir: str | Path | None`
+  Temporary output directory. Default: `~/Downloads`.
+
+*Returns:*
+
+- `pathlib.Path`
+  Absolute path of the generated output file.
+
+*Raises:*
+
+- `InputFileNotFound`
+- `UnsupportedFormat`
+- `WordStartError`
+- `SaveError`
+- `IPCError`
+- `PlatformNotSupported`
+- `StagingError`
+
+*Notes:*
+
+- Supported only on macOS.
+- HTML output (`.html`, `.htm`) is not supported.
+- The staging directory must already exist.
+- Existing output files are replaced only after conversion and transfer.
+- Overwriting the source document is prohibited.
+- Temporary staging files are removed on normal completion and ordinary failures.
 
 ---
 
@@ -213,8 +300,8 @@ conver *.docx -q
 
 Microsoft Word for macOS may request permission to save files in certain directories.
 
-Use `-s` or `--stage` to save converted files to a temporary location before moving them
-to the final output directory.
+Use `-s` or `--stage` to save converted files to a temporary location before
+moving them to the final output directory.
 
 ```bash
 conver input.docx --pdf -s
@@ -235,12 +322,15 @@ export CONVER_STAGE=1
 export CONVER_STAGE_DIR="$HOME/Downloads"
 ```
 
-Use `--no-stage` to explicitly disable staging, including when enabled through `CONVER_STAGE`.
+Use `--no-stage` to explicitly disable staging, including when enabled
+through `CONVER_STAGE`.
 
 **Notes:**
 - Staging is supported only on macOS.
 - The staging directory must already exist and be accessible to Microsoft Word.
-- HTML output (`.html` and `.htm`) always uses direct conversion; staging is bypassed.
+- In the CLI, HTML output (`.html` and `.htm`) bypasses staging and
+  uses direct conversion.
+- In the Python API, `conver_stage()` raises `UnsupportedFormat` for HTML output.
 - Temporary output files are deleted after conversion or failure.
 - Staging reduces output-directory permission prompts but does not suppress
   all Microsoft Word dialogs.
@@ -271,7 +361,7 @@ conver *.docx -o converted/
 
 `-o [--output] OUTPUT`  
     Optional.  
-    For single input: output filename.  
+    For a single input: output filename or directory.  
     For multiple inputs: must be a directory.
 
 `-s, --stage`
@@ -296,7 +386,8 @@ conver file1.docx file2.docx file3.docx -o converted/
 
 *Rules:*
 
-- When multiple inputs are provided, `--output`, if specified, must point to a directory.
+- When multiple inputs are provided, `--output`, if specified,
+  must point to a directory.
 - If the directory does not exist, it will be created automatically.
 - If no format flag is provided, the default output format is **PDF**.
 - Format flags (`--pdf`, `--rtf`, etc.) **cannot be used together with** `--output FILE`.
@@ -313,12 +404,13 @@ conver *.docx
 # -> writes output next to each input file
 ```
 
-If the input files come from **different** directories, the output directory becomes ambiguous
-and the CLI will require an explicit `--output`.
+If the input files come from **different** directories, the output directory
+becomes ambiguous and the CLI will require an explicit `--output`.
 
 ### Shell Globbing
 
-Patterns like `*.docx` are expanded by your shell before the `conver` command is executed.
+Patterns like `*.docx` are expanded by your shell before the `conver`
+command is executed.
 
 Examples:
 ```bash
@@ -405,6 +497,8 @@ These codes come from platform scripts and are mapped to exceptions by `conver()
 | 31   | Word could not save the file   |
 | 98   | Script produced invalid JSON   |
 | 99   | Unsupported platform           |
+
+`StagingError` is raised directly by the Python API and has no low-level IPC error code.
 
 ---
 

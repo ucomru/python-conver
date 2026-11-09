@@ -7,9 +7,11 @@ from .conver import (
     IPCError,
     PlatformNotSupported,
     SaveError,
+    StagingError,
     UnsupportedFormat,
     WordStartError,
     conver,
+    conver_stage,
 )
 
 __all__ = [
@@ -18,8 +20,10 @@ __all__ = [
     "InputFileNotFound",
     "PlatformNotSupported",
     "SaveError",
+    "StagingError",
     "UnsupportedFormat",
     "WordStartError",
     "__version__",
     "conver",
+    "conver_stage",
 ]
