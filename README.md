@@ -75,7 +75,7 @@ If `pipx` is *not installed*, see the
 
 - Python **3.12+**  
 - Microsoft Word must be installed on the system  
-- MacOS (JXA) or Windows (PowerShell + Word COM automation)  
+- macOS (JXA) or Windows (PowerShell + Word COM automation)  
 
 ---
 
@@ -421,6 +421,13 @@ If multiple input files are provided and `--output` is **not** specified,
 the CLI automatically attempts to infer a common parent directory for all inputs.
 If all files reside in the same directory, that directory becomes the output location.
 
+**Warning:** In batch mode, output filenames are derived from input filenames.
+Files with the same stem but different extensions (`file.docx` and `file.rtf`) produce
+the same output filename (`file.pdf`). Later conversions may overwrite earlier results.
+
+Use broad shell patterns such as `*` with care. The `-e, --ext-only` option filters
+unsupported input types but does not prevent output filename collisions.
+
 *Example:*
 
 ```bash
@@ -527,6 +534,28 @@ These codes come from platform scripts and are mapped to exceptions by `conver()
 | 99   | Unsupported platform           |
 
 `StagingError` is raised directly by the Python API and has no low-level IPC error code.
+
+---
+
+## Development and Testing
+
+Install the project with test dependencies:
+
+```bash
+pip install -e ".[test]"
+```
+
+Run the test suite:
+
+```bash
+pytest -q
+```
+
+The tests cover the Python API, CLI, staging, and IPC handling.\
+They use mocks and temporary files, so Microsoft Word is not\
+required to run the test suite.
+
+Real document conversion requires Microsoft Word on macOS or Windows.
 
 ---
 

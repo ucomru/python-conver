@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,7 +10,8 @@ requires-python = ">=3.12"
 authors = [{ name="Timur Ulyahin", email="ucomru@pm.me" }]
 description = "A cross-platform Word document converter."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 keywords = ["conversion", "documents", "office", "tools", "cli"]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -46,5 +47,4 @@ conver = [
 version = { attr = "conver.__version__" }
 
 [tool.ruff]
-exclude = []
 line-length = 88
