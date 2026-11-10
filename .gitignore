@@ -8,12 +8,21 @@
 __MACOSX/
 __WORK/
 
-# Distribution
+# Python
 *.pyc
+__pycache__/
+*.egg-info/
+
+# Distribution
 dist/
 build/
-*.egg-info/
-__pycache__/
+
+# Tests and linting
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
 
 # Sphinx documentation
 docs/_build/

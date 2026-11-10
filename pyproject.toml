@@ -27,6 +27,11 @@ Issues = "https://github.com/ucomru/python-conver/issues"
 [project.scripts]
 conver = "conver.cli:cli"
 
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
