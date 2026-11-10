@@ -1,5 +1,14 @@
 # Conver Changelog
 
+## [0.1.9] - 2026-11-10
+
+### Added
+- Added a pytest test suite covering the Python API, CLI, staging, IPC handling. [cbc5afa]
+- Added GitHub Actions CI for Python 3.12–3.14 on Linux, macOS, and Windows,
+  with automated pytest, Ruff, and basedpyright checks. [28e9624]
+- README: added CI, PyPI, Python, and license badges. [2734005]
+- Added bug report template. [a7e1d58]
+
 ## [0.1.8] - 2026-11-09
 
 ### Added
@@ -26,7 +35,7 @@
 - CLI: added source-file overwrite protection and temporary-file cleanup
   for staged conversions. [83c7c59]
 
-### Changed`
+### Changed
 - Python API: renamed `conver()` parameters from `input_path` and `output_path`
   to `input` and `output`. [a935999]
 
@@ -91,15 +100,15 @@
 - Batch mode optimized: Word remains open during multi-file conversion,
   reducing startup overhead (final file honors user `--keep-open` flag). [a292633]
 - CLI: output/format handling: [dc43909]
-    - Refined output-path logic for both single-file and batch modes:
-      unified validation of file vs directory semantics, correct directory auto-creation,
-      and consistent suffix-based detection of explicit file paths.
-      Added robust separation of cases where --output is a file or a directory.
-    - Removed obsolete conflicting checks between --output and format flags,
-      replacing them with correct single-mode validation rules.
-    - Made format-flag resolution consistent across all branches
-      (pdf default fallback preserved).
-    - Added support for --doc and --odt output formats.
+  - Refined output-path logic for both single-file and batch modes:
+    unified validation of file vs directory semantics, correct directory auto-creation,
+    and consistent suffix-based detection of explicit file paths.
+    Added robust separation of cases where --output is a file or a directory.
+  - Removed obsolete conflicting checks between --output and format flags,
+    replacing them with correct single-mode validation rules.
+  - Made format-flag resolution consistent across all branches
+    (pdf default fallback preserved).
+  - Added support for --doc and --odt output formats.
 - Unified behavior of native conversion scripts: removed obsolete MacOS-specific logic
   and updated USAGE blocks for consistent, readable cross-platform operation. [878ffb2]
 

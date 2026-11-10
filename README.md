@@ -97,13 +97,27 @@ conver("document.docx", "document.pdf")
 
 Returns: `Path("/absolute/path/document.pdf")`
 
+### Convert DOCX to PDF with pathlib
+
+Use `Path.with_suffix()` to create the PDF next to the source document:
+
+```python
+from pathlib import Path
+from conver import conver
+
+source = Path("documents/report.docx")
+result = conver(source, source.with_suffix(".pdf"))
+```
+
+The resulting PDF is saved as `documents/report.pdf`.
+
 ### Filename-only output
 
 ```python
-conver("/Users/me/docs/a.docx", "a.pdf")
+conver("/Users/me/docs/document.docx", "document.pdf")
 ```
 
-Automatically produces: `/Users/me/docs/a.pdf`
+Automatically produces: `/Users/me/docs/document.pdf`
 
 ### Staging conversion (macOS only)
 
@@ -127,7 +141,7 @@ conver_stage("document.docx", "document.pdf", stage_dir="~/Documents/WordTemp")
 
 The staging directory must already exist and be accessible to Microsoft Word.
 
-Staging is not supported for HTML output (`.html`, `.htm`).\
+Staging is not supported for HTML output (`.html`, `.htm`).  
 Use `conver()` for these formats.
 
 Staging-related failures raise `StagingError`:
@@ -147,7 +161,7 @@ except StagingError as err:
 from conver import conver, UnsupportedFormat
 
 try:
-    conver("a.doc", "a.xyz")
+    conver("document.doc", "document.xyz")
 except UnsupportedFormat:
     print("This output format is not supported.")
 ```
@@ -253,21 +267,12 @@ conver document.docx -o file_name.pdf
 ### Format flags (output placed next to input)
 
 ```bash
-conver document.docx --pdf
-conver document.docx --docx
-conver document.docx --doc
-conver document.docx --rtf
-conver document.docx --txt
-conver document.docx --html
-conver document.docx --odt
-```
-
-If only one input file and no explicit output is given,
-the selected format determines the extension:
-
-```bash
 conver document.docx --pdf # -> document.pdf
+conver document.docx --doc # -> document.doc
 conver document.docx --rtf # -> document.rtf
+conver document.docx --txt # -> document.txt
+conver document.docx --html # -> document.html
+conver document.docx --odt # -> document.odt
 ```
 
 ### Output Behavior
@@ -277,8 +282,9 @@ When OUTPUT is omitted, the resulting file is written next to the INPUT file.
 *Examples:*
 
 ```bash
-conver a.docx --pdf # -> a.pdf
-conver /path/x.docx # -> /path/x.pdf
+conver document.docx # -> document.pdf
+conver document.docx --pdf # -> document.pdf
+conver /path/document.docx # -> /path/document.pdf
 ```
 
 When multiple inputs are provided, `-o`/`--output`, if specified, must be a directory.
@@ -561,9 +567,8 @@ Run the test suite:
 pytest -q
 ```
 
-The tests cover the Python API, CLI, staging, and IPC handling.\
-They use mocks and temporary files, so Microsoft Word is not\
-required to run the test suite.
+The tests cover the Python API, CLI, staging, and IPC handling. They use mocks
+and temporary files, so Microsoft Word is not required to run the test suite.
 
 Real document conversion requires Microsoft Word on macOS or Windows.
 
