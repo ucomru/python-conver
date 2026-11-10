@@ -1,5 +1,10 @@
 # Conver Changelog
 
+## [0.2.0] - 2026-11-10
+
+### Changed
+- Released the validated 0.1.9 codebase as 0.2.0 without functional changes.
+
 ## [0.1.9] - 2026-11-10
 
 ### Added
