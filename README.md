@@ -1,5 +1,11 @@
 # conver — Word document converter
 
+[![CI](https://github.com/ucomru/python-conver/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ucomru/python-conver/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/conver)](https://pypi.org/project/conver/)
+[![Python](https://img.shields.io/badge/python-%3E%3D3.12-blue)](https://pypi.org/project/conver/)
+[![License](https://img.shields.io/github/license/ucomru/python-conver)](https://github.com/ucomru/python-conver/blob/main/LICENSE)
+
+
 `conver` is a cross-platform Python package that converts Microsoft Word documents  
 using native system automation:
 
@@ -14,7 +20,7 @@ The package provides:
    (`convert.jxa` for macOS, `convert.ps1` for Windows)
 
 Conversion is performed via Microsoft Word itself, ensuring maximum compatibility 
-with `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.odt`.
+with `.docx`, `.doc`, `.rtf`, `.txt`, `.html`, `.htm`, `.odt`.
 
 ---
 
@@ -241,25 +247,27 @@ The CLI supports two modes: direct output path, or format flags.
 ### Explicit input/output
 
 ```bash
-conver input.docx -o output.pdf
+conver document.docx -o file_name.pdf
 ```
 
 ### Format flags (output placed next to input)
 
 ```bash
-conver input.docx --pdf
-conver input.docx --rtf
-conver input.docx --txt
-conver input.docx --html
-conver input.docx --docx
+conver document.docx --pdf
+conver document.docx --docx
+conver document.docx --doc
+conver document.docx --rtf
+conver document.docx --txt
+conver document.docx --html
+conver document.docx --odt
 ```
 
 If only one input file and no explicit output is given,
 the selected format determines the extension:
 
 ```bash
-conver input.docx --pdf # -> input.pdf
-conver input.docx --rtf # -> input.rtf
+conver document.docx --pdf # -> document.pdf
+conver document.docx --rtf # -> document.rtf
 ```
 
 ### Output Behavior
@@ -273,7 +281,7 @@ conver a.docx --pdf # -> a.pdf
 conver /path/x.docx # -> /path/x.pdf
 ```
 
-When multiple inputs are provided, `--output`, if specified, must be a directory.
+When multiple inputs are provided, `-o`/`--output`, if specified, must be a directory.
 If the directory does not exist, it will be created automatically.
 
 ### Default Format
@@ -282,7 +290,7 @@ If no format flag is provided and no explicit output path is given,
 the default output format is **PDF**:
 
 ```bash
-conver input.docx # -> input.pdf
+conver document.docx # -> document.pdf
 ```
 
 ### Quiet Mode
@@ -293,7 +301,7 @@ Use `-q` or `--quiet` to suppress success output. Error messages
 are still displayed, and failures return a non-zero exit code.
 
 ```bash
-conver input.docx --pdf --quiet
+conver document.docx --pdf --quiet
 conver *.docx -q
 ```
 
@@ -324,7 +332,7 @@ Use `-s` or `--stage` to save converted files to a temporary location before
 moving them to the final output directory.
 
 ```bash
-conver input.docx --pdf -s
+conver document.docx --pdf -s
 conver *.docx --pdf -o converted/ --stage
 ```
 
@@ -332,7 +340,7 @@ The default staging directory is `~/Downloads`.
 Use `--stage-dir` to specify a different directory:
 
 ```bash
-conver input.docx --pdf -s --stage-dir ~/Documents/WordTemp
+conver document.docx --pdf -s --stage-dir ~/Documents/WordTemp
 ```
 
 Staging can also be configured through environment variables:
@@ -368,9 +376,9 @@ conver INPUT... [-o OUTPUT] \
 *Examples:*
 
 ```bash
-conver a.docx -o a.pdf
-conver a.docx --pdf
-conver /path/to/file.doc --html
+conver document.docx -o file_name.pdf
+conver document.docx --pdf
+conver /path/to/document.doc --html
 conver *.docx -o converted/
 ```
 
@@ -410,20 +418,21 @@ conver file1.docx file2.docx file3.docx -o converted/
 
 *Rules:*
 
-- When multiple inputs are provided, `--output`, if specified,
+- When multiple inputs are provided, `-o`/`--output`, if specified,
   must point to a directory.
 - If the directory does not exist, it will be created automatically.
 - If no format flag is provided, the default output format is **PDF**.
 - Format flags (`--pdf`, `--rtf`, etc.) **cannot be used together with** `--output FILE`.
 - Globbing (`*.docx`) is expanded by your shell before reaching the CLI.
 
-If multiple input files are provided and `--output` is **not** specified,
+If multiple input files are provided and `-o`/`--output` is **not** specified,
 the CLI automatically attempts to infer a common parent directory for all inputs.
 If all files reside in the same directory, that directory becomes the output location.
 
 **Warning:** In batch mode, output filenames are derived from input filenames.
-Files with the same stem but different extensions (`file.docx` and `file.rtf`) produce
-the same output filename (`file.pdf`). Later conversions may overwrite earlier results.
+Files with the same stem but different extensions (`document.docx` and `document.rtf`)
+produce the same output filename (`document.pdf`).
+Later conversions may overwrite earlier results.
 
 Use broad shell patterns such as `*` with care. The `-e, --ext-only` option filters
 unsupported input types but does not prevent output filename collisions.
@@ -436,7 +445,7 @@ conver *.docx
 ```
 
 If the input files come from **different** directories, the output directory
-becomes ambiguous and the CLI will require an explicit `--output`.
+becomes ambiguous and the CLI will require an explicit `-o`/`--output`.
 
 ### Shell Globbing
 
@@ -445,7 +454,7 @@ command is executed.
 
 Examples:
 ```bash
-conver *.docx -o outdir
+conver *.docx -o output_dir
 conver path/*.rtf --pdf
 ```
 
@@ -468,15 +477,16 @@ can be combined with an output directory, but not with an explicit output file p
 *Allowed:*
 
 ```bash
-conver input.docx --pdf
-conver input.docx -o output.pdf
+conver document.doc
+conver document.docx --pdf
+conver document.docx -o file_name.pdf
 conver *.docx -o converted/ --pdf
 ```
 
 *Invalid:*
 
 ```bash
-conver input.docx -o output.pdf --pdf
+conver document.docx -o file_name.pdf --pdf
 ```
 
 ---
